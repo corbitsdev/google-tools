@@ -1,0 +1,23 @@
+{
+  "name": "@corbits/google-tools",
+  "version": "0.1.0",
+  "type": "module",
+  "license": "LGPL-2.1-only",
+  "description": "Corbits Tools for Google",
+  "author": "Corbits",
+  "homepage": "https://github.com/corbitsdev/google-tools#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/corbitsdev/google-tools.git"
+  },
+  "bugs": {
+    "url": "https://github.com/corbitsdev/google-tools/issues"
+  },
+  "module": "index.ts",
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}
