@@ -59,9 +59,11 @@
   "scripts": {
     "link:intx": "bun scripts/link-intx.ts",
     "typecheck": "tsc -p tsconfig.typecheck.json --noEmit",
+    "typecheck:live": "tsc -p tsconfig.live.json --noEmit",
     "build": "rm -rf dist && tsc -p tsconfig.build.json",
     "prepack": "bun run build",
-    "test": "bun test --conditions intx-src src"
+    "test": "bun test --conditions intx-src src tests/live/credential.test.ts tests/live/fixtures.test.ts tests/live/oauth.test.ts",
+    "test:live": "bun test --conditions intx-src tests/live"
   },
   "peerDependencies": {
     "@intx/agent": "*",
