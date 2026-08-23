@@ -1,3 +1,8 @@
 {
-  "extends": "./tsconfig.json"
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "@intx/agent": ["./src/shims/intx-agent.d.ts"]
+    }
+  }
 }

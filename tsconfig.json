@@ -4,6 +4,7 @@
     "target": "ESNext",
     "module": "ESNext",
     "moduleResolution": "bundler",
+    "customConditions": ["intx-src"],
     "verbatimModuleSyntax": true,
     "skipLibCheck": true,
     "noEmit": true,
@@ -12,5 +13,5 @@
     "noImplicitOverride": true,
     "types": ["node", "@types/bun"]
   },
-  "include": ["src/client", "src/index.ts"]
+  "include": ["src"]
 }

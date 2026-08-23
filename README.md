@@ -1,7 +1,8 @@
 # @corbits/google-tools
 
-Google API clients, starting with Gmail. The Gmail client accepts an injected
-`fetch` implementation and never adds authorization headers itself.
+Google API clients and Interchange tools, starting with Gmail. Authentication
+is supplied through the Interchange `gmail-api` mediated credential; the
+package never accepts or returns raw tokens.
 
 ## Install
 
@@ -11,8 +12,11 @@ bun add github:corbitsdev/google-tools
 
 ## Working on it
 
+Use a sibling Interchange checkout at `../interchange` to run the tool tests.
+
 ```bash
 bun install
+bun run link:intx
 bun run typecheck
 bun test
 bun run build

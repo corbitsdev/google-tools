@@ -12,6 +12,14 @@
         "@types/node": "22.10.5",
         "typescript": "5.9.3",
       },
+      "peerDependencies": {
+        "@intx/agent": "*",
+        "@intx/types": "*",
+      },
+      "optionalPeers": [
+        "@intx/agent",
+        "@intx/types",
+      ],
     },
   },
   "packages": {
