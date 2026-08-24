@@ -35,9 +35,21 @@ GMAIL_LIVE_FIXTURE_QUERY='subject:(interchange-gmail-e2e-fixture)' \
 bun run test:live
 ```
 
-Add `GMAIL_LIVE_MUTATION_TEST=1` to also test draft creation and label changes.
-The mutation suite deletes its draft and restores the fixture labels. It never
-sends email.
+The full live suite has been verified against a dedicated Gmail fixture account.
+It exercises every Gmail tool:
+
+- `gmail_search_threads` finds the one-message fixture thread.
+- `gmail_get_thread` and `gmail_get_message` retrieve its metadata.
+- `gmail_list_labels` lists the account labels.
+- `gmail_create_draft` and `gmail_list_drafts` create and find a disposable
+  draft, which the suite then deletes.
+- `gmail_label_message` and `gmail_unlabel_message` add and remove `STARRED`
+  on the fixture message.
+- `gmail_label_thread` and `gmail_unlabel_thread` add and remove `STARRED`
+  on every message in the fixture thread.
+
+Add `GMAIL_LIVE_MUTATION_TEST=1` to run the draft and label checks. The suite
+deletes its draft, restores the fixture labels, and never sends email.
 
 The first run opens Google OAuth and stores the refresh token in the ignored
 `.local/gmail-live-token.json` file. Set `GMAIL_LIVE_TOKEN_FILE` when using a
