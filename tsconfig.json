@@ -4,7 +4,6 @@
     "target": "ESNext",
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "customConditions": ["intx-src"],
     "verbatimModuleSyntax": true,
     "skipLibCheck": true,
     "noEmit": true,

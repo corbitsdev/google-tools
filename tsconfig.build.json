@@ -2,9 +2,6 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "types": ["node"],
-    "paths": {
-      "@intx/agent": ["./src/shims/intx-agent.d.ts"]
-    },
     "noEmit": false,
     "declaration": true,
     "declarationMap": true,

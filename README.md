@@ -12,11 +12,8 @@ bun add github:corbitsdev/google-tools
 
 ## Working on it
 
-Use a sibling Interchange checkout at `../interchange` to run the tool tests.
-
 ```bash
 bun install
-bun run link:intx
 bun run typecheck
 bun test
 bun run build
