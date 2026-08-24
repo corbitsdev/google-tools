@@ -30,8 +30,6 @@ export async function createLiveHarness(): Promise<LiveHarness> {
   const credential = createStandaloneGmailCredential({
     config,
     token,
-    debug: process.env.GMAIL_LIVE_DEBUG === "1" || process.env.GMAIL_LIVE_SHOW_CONTENT === "1",
-    showContent: process.env.GMAIL_LIVE_SHOW_CONTENT === "1",
   });
   const tools = createGmailTools({
     capabilities: createRuntimeCapabilities({

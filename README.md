@@ -41,8 +41,7 @@ sends email.
 
 The first run opens Google OAuth and stores the refresh token in the ignored
 `.local/gmail-live-token.json` file. Set `GMAIL_LIVE_TOKEN_FILE` when using a
-different token file. Credentials and message contents are not logged;
-`GMAIL_LIVE_DEBUG=1` enables redacted request metadata.
+different token file. Credentials and message contents are not logged.
 
 ## License
 

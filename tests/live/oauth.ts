@@ -157,7 +157,7 @@ export async function authorizeGmail(
 ): Promise<StoredGmailToken> {
   const state = randomUUID();
   let stopServer = (): void => undefined;
-  const code = createDeferred<string>();
+  const code = Promise.withResolvers<string>();
   const server = Bun.serve({
     hostname: "127.0.0.1",
     port: config.port,
@@ -225,21 +225,4 @@ export async function authorizeGmail(
   });
 
   return exchangeAuthorizationCode(config, authorizationCode, redirectUri, fetchImpl);
-}
-
-function createDeferred<T>(): {
-  promise: Promise<T>;
-  resolve: (value: T) => void;
-  reject: (error: Error) => void;
-} {
-  let resolve: ((value: T) => void) | undefined;
-  let reject: ((error: Error) => void) | undefined;
-  const promise = new Promise<T>((resolvePromise, rejectPromise) => {
-    resolve = resolvePromise;
-    reject = rejectPromise;
-  });
-  if (resolve === undefined || reject === undefined) {
-    throw new Error("could not create OAuth callback promise");
-  }
-  return { promise, resolve, reject };
 }

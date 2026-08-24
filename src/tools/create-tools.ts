@@ -1,4 +1,3 @@
-import type { ToolHandler } from "@intx/agent";
 import { ArkErrors, type Type } from "arktype";
 import type {
   ToolCall,
@@ -26,7 +25,7 @@ import {
   type GmailMessageFormat,
   type GmailThreadView,
 } from "./models.js";
-import { createRawDraft, type DraftInput, type ReplyContext } from "./drafts.js";
+import { createRawDraft, type ReplyContext } from "./drafts.js";
 import {
   CreateDraftInput,
   GetMessageInput,
@@ -47,7 +46,11 @@ export interface GmailTools extends ToolRunner {
   dispose(): Promise<void>;
 }
 
-type ToolHandlerFactory = (client: GmailClient) => ToolHandler;
+type GmailToolHandler = (
+  client: GmailClient,
+  call: ToolCall,
+  signal: AbortSignal,
+) => Promise<ToolResult>;
 
 function parseToolInput<T extends Type>(
   validator: T,
@@ -177,13 +180,10 @@ async function listDraftsForQuery(
   };
 }
 
-const HANDLER_FACTORIES: ReadonlyMap<string, ToolHandlerFactory> = new Map<
-  string,
-  ToolHandlerFactory
->([
+const HANDLERS = new Map<string, GmailToolHandler>([
   [
     "gmail_search_threads",
-    (client) => async (call, signal) => {
+    async (client, call, signal) => {
       const input = parseToolInput(SearchThreadsInput, call.arguments);
       const response = await client.listThreads({
         query: input.query,
@@ -225,7 +225,7 @@ const HANDLER_FACTORIES: ReadonlyMap<string, ToolHandlerFactory> = new Map<
   ],
   [
     "gmail_get_thread",
-    (client) => async (call, signal) => {
+    async (client, call, signal) => {
       const input = parseToolInput(GetThreadInput, call.arguments);
       const thread = await client.getThread(input.threadId, {
         format: toGmailFormat(input.messageFormat),
@@ -240,7 +240,7 @@ const HANDLER_FACTORIES: ReadonlyMap<string, ToolHandlerFactory> = new Map<
   ],
   [
     "gmail_get_message",
-    (client) => async (call, signal) => {
+    async (client, call, signal) => {
       const input = parseToolInput(GetMessageInput, call.arguments);
       const message = await client.getMessage(input.messageId, {
         format: toGmailFormat(input.messageFormat),
@@ -255,7 +255,7 @@ const HANDLER_FACTORIES: ReadonlyMap<string, ToolHandlerFactory> = new Map<
   ],
   [
     "gmail_list_labels",
-    (client) => async (call, signal) => {
+    async (client, call, signal) => {
       parseToolInput(ListLabelsInput, call.arguments);
       const response = await client.listLabels(signal);
       return {
@@ -266,18 +266,11 @@ const HANDLER_FACTORIES: ReadonlyMap<string, ToolHandlerFactory> = new Map<
   ],
   [
     "gmail_create_draft",
-    (client) => async (call, signal) => {
+    async (client, call, signal) => {
       const input = parseToolInput(CreateDraftInput, call.arguments);
       rejectUnsupportedAttachments(input.attachments);
-      const draft: DraftInput = {
-        ...(input.to === undefined ? {} : { to: input.to }),
-        ...(input.cc === undefined ? {} : { cc: input.cc }),
-        ...(input.bcc === undefined ? {} : { bcc: input.bcc }),
-        ...(input.subject === undefined ? {} : { subject: input.subject }),
-        ...(input.body === undefined ? {} : { body: input.body }),
-        ...(input.htmlBody === undefined ? {} : { htmlBody: input.htmlBody }),
-      };
-      const reply = await replyContext(client, input.replyToMessageId, signal);
+      const { attachments: _attachments, replyToMessageId, ...draft } = input;
+      const reply = await replyContext(client, replyToMessageId, signal);
       const created = await client.createDraft({
         raw: createRawDraft(draft, reply),
         ...(reply?.threadId === undefined ? {} : { threadId: reply.threadId }),
@@ -291,7 +284,7 @@ const HANDLER_FACTORIES: ReadonlyMap<string, ToolHandlerFactory> = new Map<
   ],
   [
     "gmail_list_drafts",
-    (client) => async (call, signal) => {
+    async (client, call, signal) => {
       const input = parseToolInput(ListDraftsInput, call.arguments);
       const format = draftFormat(input.view);
       const response =
@@ -335,7 +328,7 @@ const HANDLER_FACTORIES: ReadonlyMap<string, ToolHandlerFactory> = new Map<
   ],
   [
     "gmail_label_message",
-    (client) => async (call, signal) => {
+    async (client, call, signal) => {
       const input = parseToolInput(LabelMessageInput, call.arguments);
       const message = await client.modifyMessage(
         input.messageId,
@@ -350,7 +343,7 @@ const HANDLER_FACTORIES: ReadonlyMap<string, ToolHandlerFactory> = new Map<
   ],
   [
     "gmail_unlabel_message",
-    (client) => async (call, signal) => {
+    async (client, call, signal) => {
       const input = parseToolInput(UnlabelMessageInput, call.arguments);
       const message = await client.modifyMessage(
         input.messageId,
@@ -365,7 +358,7 @@ const HANDLER_FACTORIES: ReadonlyMap<string, ToolHandlerFactory> = new Map<
   ],
   [
     "gmail_label_thread",
-    (client) => async (call, signal) => {
+    async (client, call, signal) => {
       const input = parseToolInput(LabelThreadInput, call.arguments);
       const thread = await client.modifyThread(
         input.threadId,
@@ -380,7 +373,7 @@ const HANDLER_FACTORIES: ReadonlyMap<string, ToolHandlerFactory> = new Map<
   ],
   [
     "gmail_unlabel_thread",
-    (client) => async (call, signal) => {
+    async (client, call, signal) => {
       const input = parseToolInput(UnlabelThreadInput, call.arguments);
       const thread = await client.modifyThread(
         input.threadId,
@@ -422,8 +415,8 @@ export function createGmailTools(opts: CreateGmailToolsOptions): GmailTools {
   return {
     definitions: TOOL_DEFINITIONS,
     async run(call: ToolCall, signal: AbortSignal): Promise<ToolResult> {
-      const factory = HANDLER_FACTORIES.get(call.name);
-      if (factory === undefined) {
+      const handler = HANDLERS.get(call.name);
+      if (handler === undefined) {
         return {
           callId: call.id,
           content: { error: `Unknown tool: "${call.name}"` },
@@ -432,7 +425,7 @@ export function createGmailTools(opts: CreateGmailToolsOptions): GmailTools {
       }
 
       try {
-        return await factory(await getClient())(call, signal);
+        return await handler(await getClient(), call, signal);
       } catch (error) {
         return {
           callId: call.id,
@@ -456,7 +449,7 @@ export function createGmailTools(opts: CreateGmailToolsOptions): GmailTools {
 
 function assertCatalogMatchesHandlers(): void {
   const definitions = TOOL_DEFINITIONS.map((definition) => definition.name).sort();
-  const handlers = [...HANDLER_FACTORIES.keys()].sort();
+  const handlers = [...HANDLERS.keys()].sort();
   if (JSON.stringify(definitions) !== JSON.stringify(handlers)) {
     throw new Error(
       `gmail-tools: definitions and handlers differ (${definitions.join(", ")} vs ${handlers.join(", ")})`,

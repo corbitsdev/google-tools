@@ -11,7 +11,6 @@ const MUTATING_TOOL_NAMES = new Set([
   "gmail_label_thread",
   "gmail_unlabel_thread",
 ]);
-const MUTATING_TOOL_APPROVAL: "ask" = "ask";
 
 export interface GmailToolEnv extends BaseEnv {
   capabilities: RuntimeCapabilities;
@@ -23,15 +22,8 @@ export const gmail = defineTool<GmailToolEnv>({
   definitions: TOOL_DEFINITIONS.map((definition) => ({
     name: definition.name,
     ...(MUTATING_TOOL_NAMES.has(definition.name)
-      ? { approval: MUTATING_TOOL_APPROVAL }
+      ? { approval: "ask" as const }
       : {}),
   })),
-  factory: (env) => {
-    const tools = createGmailTools({ capabilities: env.capabilities });
-    return {
-      definitions: tools.definitions,
-      run: (call, signal) => tools.run(call, signal),
-      dispose: () => tools.dispose(),
-    };
-  },
+  factory: (env) => createGmailTools({ capabilities: env.capabilities }),
 });

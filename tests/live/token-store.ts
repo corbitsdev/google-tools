@@ -8,12 +8,7 @@ export type StoredGmailToken = {
   grantedScopes?: string[];
 };
 
-export interface GmailTokenStore {
-  read(): Promise<StoredGmailToken | undefined>;
-  write(token: StoredGmailToken): Promise<void>;
-}
-
-export function createFileTokenStore(path: string): GmailTokenStore {
+export function createFileTokenStore(path: string) {
   return {
     async read() {
       let raw: string;
@@ -29,7 +24,7 @@ export function createFileTokenStore(path: string): GmailTokenStore {
         throw new Error(`invalid Gmail token file: ${path}`, { cause });
       }
     },
-    async write(token) {
+    async write(token: StoredGmailToken) {
       await mkdir(dirname(path), { recursive: true, mode: 0o700 });
       await writeFile(path, `${JSON.stringify(token, null, 2)}\n`, {
         encoding: "utf8",
