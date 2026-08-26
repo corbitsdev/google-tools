@@ -397,6 +397,48 @@ describe("createGmailTools", () => {
     expect(String(result.content.error)).toContain(GMAIL_CREDENTIAL_HANDLE);
   });
 
+  test("retries credential resolution after a transient failure", async () => {
+    let resolveAttempts = 0;
+    const fetchImpl = createFetchImpl(async (input) => {
+      expect(new URL(String(input)).pathname).toBe("/gmail/v1/users/me/labels");
+      return new Response(JSON.stringify({ labels: [] }));
+    });
+    const tools = createGmailTools({
+      capabilities: createRuntimeCapabilities({
+        credentials: {
+          async resolve(handle) {
+            resolveAttempts += 1;
+            if (handle !== GMAIL_CREDENTIAL_HANDLE || resolveAttempts === 1) {
+              throw new Error("credential temporarily unavailable");
+            }
+            return { kind: "http", fetch: fetchImpl, dispose() {} };
+          },
+        },
+      }),
+    });
+
+    const signal = new AbortController().signal;
+    const firstResult = await tools.run(
+      { id: "call-retry-1", name: "gmail_list_labels", arguments: {} },
+      signal,
+    );
+    expect(firstResult).toMatchObject({
+      content: { error: "credential temporarily unavailable" },
+      isError: true,
+    });
+
+    const secondResult = await tools.run(
+      { id: "call-retry-2", name: "gmail_list_labels", arguments: {} },
+      signal,
+    );
+    expect(secondResult).toEqual({
+      callId: "call-retry-2",
+      content: { data: { labels: [] } },
+    });
+    expect(resolveAttempts).toBe(2);
+    await tools.dispose();
+  });
+
   test("creates a plain-text draft and returns its normalized Gmail draft", async () => {
     const fetchImpl = createFetchImpl(async (input, init) => {
       const url = new URL(String(input));

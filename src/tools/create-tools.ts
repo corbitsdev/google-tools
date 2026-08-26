@@ -395,21 +395,29 @@ export function createGmailTools(opts: CreateGmailToolsOptions): GmailTools {
   let disposed = false;
 
   async function getClient(): Promise<GmailClient> {
-    clientPromise ??= (async () => {
-      const credentials = opts.capabilities.resolve("credentials");
-      const resolved = await credentials.resolve(GMAIL_CREDENTIAL_HANDLE);
-      if (resolved.kind !== "http") {
-        throw new Error(
-          `gmail-tools: expected http mediated credential for handle "${GMAIL_CREDENTIAL_HANDLE}", got ${resolved.kind}`,
-        );
-      }
-      mediated = resolved;
-      const fetchImpl: GmailFetch = (input, init) => resolved.fetch(input, init);
-      return createGmailClient({
-        fetchImpl,
-      });
-    })();
-    return clientPromise;
+    const pendingClient =
+      clientPromise ??
+      (clientPromise = (async () => {
+        const credentials = opts.capabilities.resolve("credentials");
+        const resolved = await credentials.resolve(GMAIL_CREDENTIAL_HANDLE);
+        if (resolved.kind !== "http") {
+          throw new Error(
+            `gmail-tools: expected http mediated credential for handle "${GMAIL_CREDENTIAL_HANDLE}", got ${resolved.kind}`,
+          );
+        }
+        mediated = resolved;
+        const fetchImpl: GmailFetch = (input, init) => resolved.fetch(input, init);
+        return createGmailClient({
+          fetchImpl,
+        });
+      })());
+
+    try {
+      return await pendingClient;
+    } catch (error) {
+      if (clientPromise === pendingClient) clientPromise = undefined;
+      throw error;
+    }
   }
 
   return {
