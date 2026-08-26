@@ -199,6 +199,89 @@ describe("createGmailTools", () => {
     await tools.dispose();
   });
 
+  test("bounds thread lookups while preserving search order", async () => {
+    const started: string[] = [];
+    const resolveThread = new Map<string, () => void>();
+    const fetchImpl = createFetchImpl(async (input) => {
+      const url = new URL(String(input));
+      if (url.pathname === "/gmail/v1/users/me/threads") {
+        return new Response(
+          JSON.stringify({ threads: Array.from({ length: 11 }, (_, index) => ({ id: `thread-${index + 1}` })) }),
+        );
+      }
+      const id = url.pathname.split("/").at(-1);
+      if (id === undefined) throw new Error("expected thread ID");
+      started.push(id);
+      return new Promise((resolve) => {
+        resolveThread.set(id, () => resolve(new Response(JSON.stringify({ id, messages: [] }))));
+      });
+    });
+    const tools = createGmailTools({ capabilities: testCapabilities(fetchImpl) });
+    const resultPromise = tools.run(
+      { id: "call-thread-limit", name: "gmail_search_threads", arguments: { pageSize: 11 } },
+      new AbortController().signal,
+    );
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(started).toHaveLength(10);
+    expect(resolveThread.has("thread-11")).toBe(false);
+    for (const id of [...started].reverse()) {
+      const resolve = resolveThread.get(id);
+      if (resolve === undefined) throw new Error(`missing thread resolver: ${id}`);
+      resolve();
+    }
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(started).toContain("thread-11");
+    const resolve = resolveThread.get("thread-11");
+    if (resolve === undefined) throw new Error("missing thread-11 resolver");
+    resolve();
+
+    const result = await resultPromise;
+    expect(result.content).toMatchObject({
+      data: { threads: Array.from({ length: 11 }, (_, index) => ({ id: `thread-${index + 1}` })) },
+    });
+    await tools.dispose();
+  });
+
+  test("does not start queued thread lookups after abort", async () => {
+    const started: string[] = [];
+    const resolveThread = new Map<string, () => void>();
+    const fetchImpl = createFetchImpl(async (input) => {
+      const url = new URL(String(input));
+      if (url.pathname === "/gmail/v1/users/me/threads") {
+        return new Response(
+          JSON.stringify({ threads: Array.from({ length: 11 }, (_, index) => ({ id: `thread-${index + 1}` })) }),
+        );
+      }
+      const id = url.pathname.split("/").at(-1);
+      if (id === undefined) throw new Error("expected thread ID");
+      started.push(id);
+      return new Promise((resolve) => {
+        resolveThread.set(id, () => resolve(new Response(JSON.stringify({ id, messages: [] }))));
+      });
+    });
+    const tools = createGmailTools({ capabilities: testCapabilities(fetchImpl) });
+    const controller = new AbortController();
+    const resultPromise = tools.run(
+      { id: "call-thread-abort", name: "gmail_search_threads", arguments: { pageSize: 11 } },
+      controller.signal,
+    );
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(started).toHaveLength(10);
+    controller.abort();
+    for (const id of started) {
+      const resolve = resolveThread.get(id);
+      if (resolve === undefined) throw new Error(`missing thread resolver: ${id}`);
+      resolve();
+    }
+
+    const result = await resultPromise;
+    expect(result.isError).toBe(true);
+    expect(started).not.toContain("thread-11");
+    await tools.dispose();
+  });
+
   test("returns complete decoded text, HTML, and attachment metadata", async () => {
     const plaintextBody = "a".repeat(70_000);
     const fetchImpl = createFetchImpl(async (input) => {
@@ -544,6 +627,69 @@ describe("createGmailTools", () => {
       new AbortController().signal,
     );
     expect(queryResult.content).toEqual({ data: { drafts: [{ id: "draft-1" }] } });
+    await tools.dispose();
+  });
+
+  test("stops draft query paging after finding the requested drafts", async () => {
+    let draftPageRequests = 0;
+    const fetchImpl = createFetchImpl(async (input) => {
+      const url = new URL(String(input));
+      if (url.pathname === "/gmail/v1/users/me/messages") {
+        return new Response(
+          JSON.stringify({
+            messages: [{ id: "message-2" }, { id: "message-1" }],
+            nextPageToken: "query-next",
+          }),
+        );
+      }
+      if (url.pathname === "/gmail/v1/users/me/drafts") {
+        draftPageRequests += 1;
+        return new Response(
+          JSON.stringify({
+            drafts: [
+              { id: "draft-1", message: { id: "message-1" } },
+              { id: "draft-2", message: { id: "message-2" } },
+            ],
+            nextPageToken: "unused-draft-page",
+          }),
+        );
+      }
+      const id = url.pathname.split("/").at(-1);
+      return new Response(JSON.stringify({ id: `draft-${id?.at(-1)}`, message: { id, payload: { headers: [] } } }));
+    });
+    const tools = createGmailTools({ capabilities: testCapabilities(fetchImpl) });
+    const result = await tools.run(
+      { id: "call-draft-page", name: "gmail_list_drafts", arguments: { query: "subject:status" } },
+      new AbortController().signal,
+    );
+    expect(draftPageRequests).toBe(1);
+    expect(result.content).toMatchObject({
+      data: { drafts: [{ id: "draft-2" }, { id: "draft-1" }], nextPageToken: "query-next" },
+    });
+    await tools.dispose();
+  });
+
+  test("continues draft query paging until it finds a requested draft", async () => {
+    const fetchImpl = createFetchImpl(async (input) => {
+      const url = new URL(String(input));
+      if (url.pathname === "/gmail/v1/users/me/messages") {
+        return new Response(JSON.stringify({ messages: [{ id: "message-1" }] }));
+      }
+      if (url.pathname === "/gmail/v1/users/me/drafts") {
+        return new Response(
+          url.searchParams.get("pageToken") === null
+            ? JSON.stringify({ drafts: [], nextPageToken: "page-2" })
+            : JSON.stringify({ drafts: [{ id: "draft-1", message: { id: "message-1" } }] }),
+        );
+      }
+      return new Response(JSON.stringify({ id: "draft-1", message: { id: "message-1", payload: { headers: [] } } }));
+    });
+    const tools = createGmailTools({ capabilities: testCapabilities(fetchImpl) });
+    const result = await tools.run(
+      { id: "call-draft-page-2", name: "gmail_list_drafts", arguments: { query: "subject:status" } },
+      new AbortController().signal,
+    );
+    expect(result.content).toMatchObject({ data: { drafts: [{ id: "draft-1" }] } });
     await tools.dispose();
   });
 

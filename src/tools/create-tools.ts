@@ -52,6 +52,8 @@ type GmailToolHandler = (
   signal: AbortSignal,
 ) => Promise<ToolResult>;
 
+const MAX_THREAD_LOOKUPS_IN_FLIGHT = 10;
+
 function parseToolInput<T extends Type>(
   validator: T,
   input: unknown,
@@ -152,21 +154,23 @@ async function listDraftsForQuery(
     pageToken,
     signal,
   });
+  const matchingMessageIds = new Set((matchingMessages.messages ?? []).map((message) => message.id));
   const draftsByMessageId = new Map<string, GmailDraft>();
   let draftsPageToken: string | undefined;
-  do {
+  while (matchingMessageIds.size > 0) {
     const draftPage = await client.listDrafts({
       pageSize: 500,
       pageToken: draftsPageToken,
       signal,
     });
     for (const draft of draftPage.drafts ?? []) {
-      if (draft.message?.id !== undefined) {
+      if (draft.message?.id !== undefined && matchingMessageIds.delete(draft.message.id)) {
         draftsByMessageId.set(draft.message.id, draft);
       }
     }
     draftsPageToken = draftPage.nextPageToken;
-  } while (draftsPageToken !== undefined);
+    if (draftsPageToken === undefined) break;
+  }
 
   const drafts = (matchingMessages.messages ?? []).flatMap((message) => {
     const draft = draftsByMessageId.get(message.id);
@@ -178,6 +182,48 @@ async function listDraftsForQuery(
       ? {}
       : { nextPageToken: matchingMessages.nextPageToken }),
   };
+}
+
+async function lookupThreads(
+  client: GmailClient,
+  threadIds: readonly string[],
+  view: GmailThreadView,
+  signal: AbortSignal,
+) {
+  const threads = new Array<{
+    id: string;
+    messages: ReturnType<typeof toThreadListMessage>[];
+  }>(threadIds.length);
+  let nextIndex = 0;
+  let failed = false;
+  const worker = async () => {
+    while (!failed) {
+      signal.throwIfAborted();
+      const index = nextIndex;
+      nextIndex += 1;
+      if (index >= threadIds.length) return;
+      const threadId = threadIds[index];
+      if (threadId === undefined) return;
+      try {
+        const fullThread = await client.getThread(threadId, {
+          format: "metadata",
+          metadataHeaders: metadataHeadersForView(view),
+          signal,
+        });
+        threads[index] = {
+          id: fullThread.id,
+          messages: (fullThread.messages ?? []).map((message) => toThreadListMessage(message, view)),
+        };
+      } catch (error) {
+        failed = true;
+        throw error;
+      }
+    }
+  };
+  await Promise.all(
+    Array.from({ length: Math.min(threadIds.length, MAX_THREAD_LOOKUPS_IN_FLIGHT) }, worker),
+  );
+  return threads;
 }
 
 const HANDLERS = new Map<string, GmailToolHandler>([
@@ -192,20 +238,11 @@ const HANDLERS = new Map<string, GmailToolHandler>([
         includeTrash: input.includeTrash,
         signal,
       });
-      const threads = await Promise.all(
-        (response.threads ?? []).map(async (thread) => {
-          const fullThread = await client.getThread(thread.id, {
-            format: "metadata",
-            metadataHeaders: metadataHeadersForView(input.view),
-            signal,
-          });
-          return {
-            id: fullThread.id,
-            messages: (fullThread.messages ?? []).map((message) =>
-              toThreadListMessage(message, input.view),
-            ),
-          };
-        }),
+      const threads = await lookupThreads(
+        client,
+        (response.threads ?? []).map((thread) => thread.id),
+        input.view,
+        signal,
       );
       return {
         callId: call.id,
