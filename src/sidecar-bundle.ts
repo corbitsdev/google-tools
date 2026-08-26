@@ -2,15 +2,7 @@ import { defineTool, type BaseEnv } from "@intx/agent";
 import type { RuntimeCapabilities } from "@intx/types/runtime-capabilities";
 
 import { createGmailTools } from "./tools/create-tools.js";
-import { TOOL_DEFINITIONS } from "./tools/definitions.js";
-
-const MUTATING_TOOL_NAMES = new Set([
-  "gmail_create_draft",
-  "gmail_label_message",
-  "gmail_unlabel_message",
-  "gmail_label_thread",
-  "gmail_unlabel_thread",
-]);
+import { GMAIL_TOOL_CATALOG } from "./tools/definitions.js";
 
 export interface GmailToolEnv extends BaseEnv {
   capabilities: RuntimeCapabilities;
@@ -19,11 +11,9 @@ export interface GmailToolEnv extends BaseEnv {
 export const gmail = defineTool<GmailToolEnv>({
   id: "@corbits/google-tools/sidecar-bundle",
   requires: ["capabilities"],
-  definitions: TOOL_DEFINITIONS.map((definition) => ({
+  definitions: GMAIL_TOOL_CATALOG.map((definition) => ({
     name: definition.name,
-    ...(MUTATING_TOOL_NAMES.has(definition.name)
-      ? { approval: "ask" as const }
-      : {}),
+    ...(definition.approval === undefined ? {} : { approval: definition.approval }),
   })),
   factory: (env) => createGmailTools({ capabilities: env.capabilities }),
 });

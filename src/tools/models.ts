@@ -132,19 +132,21 @@ function dateFromMessage(message: GmailMessage, headerDate: string | undefined):
 
 function baseMessage(message: GmailMessage): GmailToolMessage {
   const headers = headersByName(message.payload?.headers);
+  const date = dateFromMessage(message, headers.get("date"));
   return {
     id: message.id,
     ...(message.threadId === undefined ? {} : { threadId: message.threadId }),
     labelIds: message.labelIds ?? [],
     ...(message.sizeEstimate === undefined ? {} : { sizeEstimate: message.sizeEstimate }),
-    ...(dateFromMessage(message, headers.get("date")) === undefined
-      ? {}
-      : { date: dateFromMessage(message, headers.get("date")) }),
+    ...(date === undefined ? {} : { date }),
   };
 }
 
 function messageMetadata(message: GmailMessage, includeSubject: boolean): GmailToolMessage {
   const headers = headersByName(message.payload?.headers);
+  const toRecipients = recipients(headers.get("to"));
+  const ccRecipients = recipients(headers.get("cc"));
+  const bccRecipients = recipients(headers.get("bcc"));
   return {
     ...baseMessage(message),
     ...(includeSubject && message.snippet !== undefined ? { snippet: message.snippet } : {}),
@@ -152,15 +154,9 @@ function messageMetadata(message: GmailMessage, includeSubject: boolean): GmailT
       ? { subject: headers.get("subject") }
       : {}),
     ...(headers.get("from") === undefined ? {} : { sender: headers.get("from") }),
-    ...(recipients(headers.get("to")) === undefined
-      ? {}
-      : { toRecipients: recipients(headers.get("to")) }),
-    ...(recipients(headers.get("cc")) === undefined
-      ? {}
-      : { ccRecipients: recipients(headers.get("cc")) }),
-    ...(recipients(headers.get("bcc")) === undefined
-      ? {}
-      : { bccRecipients: recipients(headers.get("bcc")) }),
+    ...(toRecipients === undefined ? {} : { toRecipients }),
+    ...(ccRecipients === undefined ? {} : { ccRecipients }),
+    ...(bccRecipients === undefined ? {} : { bccRecipients }),
   };
 }
 
@@ -197,14 +193,12 @@ export function toToolMessage(
 
   const parts = collectParts(message.payload);
   const messageAttachments = attachments(parts);
+  const plaintextBody = bodyForMimeType(parts, "text/plain");
+  const htmlBody = bodyForMimeType(parts, "text/html");
   return {
     ...metadata,
-    ...(bodyForMimeType(parts, "text/plain") === undefined
-      ? {}
-      : { plaintextBody: bodyForMimeType(parts, "text/plain") }),
-    ...(bodyForMimeType(parts, "text/html") === undefined
-      ? {}
-      : { htmlBody: bodyForMimeType(parts, "text/html") }),
+    ...(plaintextBody === undefined ? {} : { plaintextBody }),
+    ...(htmlBody === undefined ? {} : { htmlBody }),
     ...(messageAttachments.length === 0
       ? {}
       : {

@@ -16,7 +16,9 @@ import {
 
 export const GMAIL_CREDENTIAL_HANDLE = "gmail-api";
 
-export const TOOL_DEFINITIONS: ToolDefinition[] = [
+export type GmailToolCatalogEntry = ToolDefinition & { approval?: "ask" };
+
+export const GMAIL_TOOL_CATALOG: GmailToolCatalogEntry[] = [
   {
     name: "gmail_search_threads",
     description:
@@ -43,6 +45,7 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
     description:
       "Create a Gmail draft. Attachments are accepted by the schema for Google compatibility but are not supported by Gmail's MCP draft flow.",
     inputSchema: createInputJSONSchema(CreateDraftInput),
+    approval: "ask",
   },
   {
     name: "gmail_list_drafts",
@@ -53,20 +56,28 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
     name: "gmail_label_message",
     description: "Add one or more labels to a Gmail message.",
     inputSchema: createInputJSONSchema(LabelMessageInput),
+    approval: "ask",
   },
   {
     name: "gmail_unlabel_message",
     description: "Remove one or more labels from a Gmail message.",
     inputSchema: createInputJSONSchema(UnlabelMessageInput),
+    approval: "ask",
   },
   {
     name: "gmail_label_thread",
     description: "Add one or more labels to every message in a Gmail thread.",
     inputSchema: createInputJSONSchema(LabelThreadInput),
+    approval: "ask",
   },
   {
     name: "gmail_unlabel_thread",
     description: "Remove one or more labels from every message in a Gmail thread.",
     inputSchema: createInputJSONSchema(UnlabelThreadInput),
+    approval: "ask",
   },
 ];
+
+export const TOOL_DEFINITIONS: ToolDefinition[] = GMAIL_TOOL_CATALOG.map(
+  ({ approval: _approval, ...definition }) => definition,
+);
