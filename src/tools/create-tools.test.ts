@@ -192,7 +192,7 @@ describe("createGmailTools", () => {
             },
           ],
           nextPageToken: "next-2",
-          resultCountEstimate: "101",
+          resultCountEstimate: 101,
         },
       },
     });

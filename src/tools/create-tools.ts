@@ -254,7 +254,7 @@ const HANDLERS = new Map<string, GmailToolHandler>([
               : { nextPageToken: response.nextPageToken }),
             ...(response.resultSizeEstimate === undefined
               ? {}
-              : { resultCountEstimate: String(response.resultSizeEstimate) }),
+              : { resultCountEstimate: response.resultSizeEstimate }),
           },
         },
       };
