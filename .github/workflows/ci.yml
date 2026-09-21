@@ -21,3 +21,17 @@ jobs:
       - run: bun run typecheck
       - run: bun test
       - run: bun run build
+      - name: node smoke
+        run: |
+          node -e '
+            const major = Number(process.versions.node.split(".")[0]);
+            if (major < 24) {
+              throw new Error("need Node 24+, got " + process.version);
+            }
+            import("./dist/index.js").then((m) => {
+              if (typeof m.createGmailTools !== "function") {
+                throw new Error("missing export: createGmailTools");
+              }
+              console.log("node smoke ok", process.version);
+            });
+          '
