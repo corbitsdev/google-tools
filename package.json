@@ -3,7 +3,14 @@
   "version": "0.1.0",
   "type": "module",
   "license": "LGPL-2.1-only",
-  "description": "Corbits Tools for Google",
+  "description": "Corbits Google tools for Interchange, starting with Gmail.",
+  "keywords": [
+    "corbits",
+    "google",
+    "gmail",
+    "tools",
+    "interchange"
+  ],
   "author": "Corbits",
   "homepage": "https://github.com/corbitsdev/google-tools#readme",
   "repository": {
@@ -13,11 +20,66 @@
   "bugs": {
     "url": "https://github.com/corbitsdev/google-tools/issues"
   },
-  "module": "index.ts",
-  "devDependencies": {
-    "@types/bun": "latest"
+  "engines": {
+    "node": ">=22"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "bun": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./sidecar-bundle": {
+      "bun": "./src/sidecar-bundle.ts",
+      "types": "./dist/sidecar-bundle.d.ts",
+      "default": "./dist/sidecar-bundle.js"
+    }
+  },
+  "interchange": {
+    "tools": "./dist/sidecar-bundle.js",
+    "credentials": [
+      {
+        "handle": "gmail-api",
+        "scopes": [
+          "https://www.googleapis.com/auth/gmail.modify"
+        ]
+      }
+    ]
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/**/*.test.ts",
+    "LICENSE",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.typecheck.json --noEmit",
+    "typecheck:live": "tsc -p tsconfig.live.json --noEmit",
+    "build": "rm -rf dist && tsc -p tsconfig.build.json",
+    "prepack": "bun run build",
+    "test": "bun test src tests/live/credential.test.ts tests/live/fixtures.test.ts tests/live/oauth.test.ts",
+    "test:live": "bun test tests/live"
   },
   "peerDependencies": {
-    "typescript": "^5"
+    "@intx/agent": "*",
+    "@intx/types": "*"
+  },
+  "peerDependenciesMeta": {
+    "@intx/agent": { "optional": true },
+    "@intx/types": { "optional": true }
+  },
+  "devDependencies": {
+    "@intx/agent": "^0.3.0",
+    "@intx/types": "^0.3.0",
+    "@types/bun": "1.3.14",
+    "@types/node": "22.10.5",
+    "typescript": "5.9.3"
+  },
+  "dependencies": {
+    "arktype": "^2.2.3"
   }
 }
