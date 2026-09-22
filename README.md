@@ -4,6 +4,10 @@ Google API clients and Interchange tools, starting with Gmail. Authentication
 is supplied through the Interchange `gmail-api` mediated credential; the
 package never accepts or returns raw tokens.
 
+## Requirements
+
+Node.js 24 or newer (`engines.node >=24`).
+
 ## Install
 
 ```bash

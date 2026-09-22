@@ -11,7 +11,7 @@
     "tools",
     "interchange"
   ],
-  "author": "Corbits",
+  "author": "Sawyer Cutler <sawyer@dirtroad.dev>",
   "homepage": "https://github.com/corbitsdev/google-tools#readme",
   "repository": {
     "type": "git",
@@ -21,7 +21,7 @@
     "url": "https://github.com/corbitsdev/google-tools/issues"
   },
   "engines": {
-    "node": ">=22"
+    "node": ">=24"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
