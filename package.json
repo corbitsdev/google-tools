@@ -20,6 +20,9 @@
   "bugs": {
     "url": "https://github.com/corbitsdev/google-tools/issues"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "engines": {
     "node": ">=24"
   },
@@ -27,12 +30,10 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "bun": "./src/index.ts",
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
     "./sidecar-bundle": {
-      "bun": "./src/sidecar-bundle.ts",
       "types": "./dist/sidecar-bundle.d.ts",
       "default": "./dist/sidecar-bundle.js"
     }
@@ -50,8 +51,6 @@
   },
   "files": [
     "dist",
-    "src",
-    "!src/**/*.test.ts",
     "LICENSE",
     "README.md"
   ],
