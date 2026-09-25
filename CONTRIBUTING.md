@@ -5,7 +5,7 @@
 ```bash
 bun install
 bun run typecheck
-bun run typecheck:live
+bun run typecheck:e2e
 bun run test
 bun run build
 ```
@@ -23,7 +23,7 @@ GMAIL_LIVE_TEST=1 \
 GMAIL_LIVE_CLIENT_ID='...' \
 GMAIL_LIVE_CLIENT_SECRET='...' \
 GMAIL_LIVE_FIXTURE_QUERY='subject:(interchange-gmail-e2e-fixture)' \
-bun run test:live
+bun run test:e2e
 ```
 
 The full live suite has been verified against a dedicated Gmail fixture account.
@@ -45,3 +45,10 @@ deletes its draft, restores the fixture labels, and never sends email.
 The first run opens Google OAuth and stores the refresh token in the ignored
 `.local/gmail-live-token.json` file. Set `GMAIL_LIVE_TOKEN_FILE` when using a
 different token file. Credentials and message contents are not logged.
+
+## Commit messages
+
+Commit subjects and PR titles follow [Conventional Commits](https://www.conventionalcommits.org): `feat`, `fix`, `refactor`, `test`, `docs`, `build`, `ci`, `perf`, and `chore(release): x.y.z` for releases.
+Add `!` only for public API breaks: removed or renamed exports, changed signatures, newly required params. Peer and dependency range changes are `build(deps):` with no `!`.
+Keep subjects imperative, lowercase after the colon, 72 characters or less, and free of ticket IDs.
+Every PR links its issue with a `Closes <issue id>` line in the PR body.
