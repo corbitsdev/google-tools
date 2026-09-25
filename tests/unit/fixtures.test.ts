@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 
 import type { GmailTools } from "../../src/tools/create-tools.js";
-import { findGmailFixture } from "./fixtures.js";
+import { findGmailFixture } from "../live/fixtures.js";
 
 test("findGmailFixture uses the Gmail tool argument contract", async () => {
   let call:

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { readGmailOAuthConfig, refreshGmailAccessToken } from "./oauth.js";
+import { readGmailOAuthConfig, refreshGmailAccessToken } from "../live/oauth.js";
 
 describe("Gmail OAuth", () => {
   test("normalizes the required configuration", () => {

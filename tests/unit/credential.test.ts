@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
-import { createStandaloneGmailCredential } from "./credential.js";
-import { type GmailOAuthConfig } from "./oauth.js";
+import { createStandaloneGmailCredential } from "../live/credential.js";
+import { type GmailOAuthConfig } from "../live/oauth.js";
 
 const config: GmailOAuthConfig = {
   clientId: "client-id",

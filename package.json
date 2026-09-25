@@ -60,7 +60,7 @@
     "typecheck:live": "tsc -p tsconfig.live.json --noEmit",
     "build": "rm -rf dist && tsc -p tsconfig.build.json",
     "prepack": "bun run build",
-    "test": "bun test src tests/live/credential.test.ts tests/live/fixtures.test.ts tests/live/oauth.test.ts",
+    "test": "bun test src tests/unit",
     "test:live": "bun test tests/live"
   },
   "peerDependencies": {
