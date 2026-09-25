@@ -1,6 +1,6 @@
 {
   "name": "@corbits/google-tools",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "license": "LGPL-2.1-only",
   "description": "Corbits Google tools for Interchange, starting with Gmail.",
