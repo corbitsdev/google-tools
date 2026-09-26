@@ -65,9 +65,13 @@ function parseToolInput<T extends Type>(
   return result;
 }
 
-function rejectUnsupportedAttachments(attachments: readonly unknown[] | undefined): void {
+function rejectUnsupportedAttachments(
+  attachments: readonly unknown[] | undefined,
+): void {
   if (attachments !== undefined && attachments.length > 0) {
-    throw new Error("gmail_create_draft: attachments are not supported by Gmail MCP drafts");
+    throw new Error(
+      "gmail_create_draft: attachments are not supported by Gmail MCP drafts",
+    );
   }
 }
 
@@ -82,12 +86,16 @@ function toGmailFormat(format: GmailMessageFormat): GmailFormat {
   }
 }
 
-function metadataHeadersForFormat(format: GmailMessageFormat): readonly string[] | undefined {
+function metadataHeadersForFormat(
+  format: GmailMessageFormat,
+): readonly string[] | undefined {
   if (format === "METADATA_ONLY") return undefined;
   return ["Subject", "From", "To", "Cc", "Date"];
 }
 
-function draftFormat(view: "DRAFT_VIEW_FULL" | "DRAFT_VIEW_METADATA_ONLY"): GmailMessageFormat {
+function draftFormat(
+  view: "DRAFT_VIEW_FULL" | "DRAFT_VIEW_METADATA_ONLY",
+): GmailMessageFormat {
   return view === "DRAFT_VIEW_FULL" ? "FULL_CONTENT" : "METADATA_ONLY";
 }
 
@@ -112,20 +120,31 @@ async function replyContext(
   signal: AbortSignal,
 ): Promise<ReplyContext | undefined> {
   if (messageId === undefined) return undefined;
-  const original = await client.getMessage(messageId, { format: "full", signal });
+  const original = await client.getMessage(messageId, {
+    format: "full",
+    signal,
+  });
   const normalized = toToolMessage(original, "FULL_CONTENT");
   const originalMessageId = headerValue(original, "Message-ID");
   const originalReferences = headerValue(original, "References");
   const recipient = inputRecipients(original, normalized);
   return {
     ...(original.threadId === undefined ? {} : { threadId: original.threadId }),
-    ...(originalMessageId === undefined ? {} : { messageId: originalMessageId }),
-    ...(originalReferences === undefined ? {} : { references: originalReferences }),
-    ...(normalized.subject === undefined ? {} : { subject: normalized.subject }),
+    ...(originalMessageId === undefined
+      ? {}
+      : { messageId: originalMessageId }),
+    ...(originalReferences === undefined
+      ? {}
+      : { references: originalReferences }),
+    ...(normalized.subject === undefined
+      ? {}
+      : { subject: normalized.subject }),
     ...(normalized.plaintextBody === undefined
       ? {}
       : { plaintextBody: normalized.plaintextBody }),
-    ...(normalized.htmlBody === undefined ? {} : { htmlBody: normalized.htmlBody }),
+    ...(normalized.htmlBody === undefined
+      ? {}
+      : { htmlBody: normalized.htmlBody }),
     ...(recipient === undefined ? {} : { to: recipient }),
   };
 }
@@ -138,7 +157,9 @@ function inputRecipients(
     ? normalized.toRecipients?.[0]
     : normalized.sender;
   const recipient = plainEmailAddress(replyAddress);
-  return recipient === undefined || recipient.length === 0 ? undefined : [recipient];
+  return recipient === undefined || recipient.length === 0
+    ? undefined
+    : [recipient];
 }
 
 async function listDraftsForQuery(
@@ -154,7 +175,9 @@ async function listDraftsForQuery(
     pageToken,
     signal,
   });
-  const matchingMessageIds = new Set((matchingMessages.messages ?? []).map((message) => message.id));
+  const matchingMessageIds = new Set(
+    (matchingMessages.messages ?? []).map((message) => message.id),
+  );
   const draftsByMessageId = new Map<string, GmailDraft>();
   let draftsPageToken: string | undefined;
   while (matchingMessageIds.size > 0) {
@@ -164,7 +187,10 @@ async function listDraftsForQuery(
       signal,
     });
     for (const draft of draftPage.drafts ?? []) {
-      if (draft.message?.id !== undefined && matchingMessageIds.delete(draft.message.id)) {
+      if (
+        draft.message?.id !== undefined &&
+        matchingMessageIds.delete(draft.message.id)
+      ) {
         draftsByMessageId.set(draft.message.id, draft);
       }
     }
@@ -190,10 +216,12 @@ async function lookupThreads(
   view: GmailThreadView,
   signal: AbortSignal,
 ) {
-  const threads = new Array<{
+  const threads = Array.from<{
     id: string;
     messages: ReturnType<typeof toThreadListMessage>[];
-  }>(threadIds.length);
+  }>({
+    length: threadIds.length,
+  });
   let nextIndex = 0;
   let failed = false;
   const worker = async () => {
@@ -212,7 +240,9 @@ async function lookupThreads(
         });
         threads[index] = {
           id: fullThread.id,
-          messages: (fullThread.messages ?? []).map((message) => toThreadListMessage(message, view)),
+          messages: (fullThread.messages ?? []).map((message) =>
+            toThreadListMessage(message, view),
+          ),
         };
       } catch (error) {
         failed = true;
@@ -221,7 +251,10 @@ async function lookupThreads(
     }
   };
   await Promise.all(
-    Array.from({ length: Math.min(threadIds.length, MAX_THREAD_LOOKUPS_IN_FLIGHT) }, worker),
+    Array.from(
+      { length: Math.min(threadIds.length, MAX_THREAD_LOOKUPS_IN_FLIGHT) },
+      worker,
+    ),
   );
   return threads;
 }
@@ -443,7 +476,8 @@ export function createGmailTools(opts: CreateGmailToolsOptions): GmailTools {
           );
         }
         mediated = resolved;
-        const fetchImpl: GmailFetch = (input, init) => resolved.fetch(input, init);
+        const fetchImpl: GmailFetch = (input, init) =>
+          resolved.fetch(input, init);
         return createGmailClient({
           fetchImpl,
         });
@@ -493,7 +527,9 @@ export function createGmailTools(opts: CreateGmailToolsOptions): GmailTools {
 }
 
 function assertCatalogMatchesHandlers(): void {
-  const definitions = TOOL_DEFINITIONS.map((definition) => definition.name).sort();
+  const definitions = TOOL_DEFINITIONS.map(
+    (definition) => definition.name,
+  ).sort();
   const handlers = [...HANDLERS.keys()].sort();
   if (JSON.stringify(definitions) !== JSON.stringify(handlers)) {
     throw new Error(

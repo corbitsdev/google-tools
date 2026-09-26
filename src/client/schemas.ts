@@ -77,17 +77,25 @@ export type GmailThread = typeof GmailThreadSchema.infer;
 export const GmailDraftSchema = GmailSchemas.GmailDraft;
 export type GmailDraft = typeof GmailDraftSchema.infer;
 
-export const GmailListThreadsResponseSchema = GmailSchemas.GmailListThreadsResponse;
-export type GmailListThreadsResponse = typeof GmailListThreadsResponseSchema.infer;
+export const GmailListThreadsResponseSchema =
+  GmailSchemas.GmailListThreadsResponse;
+export type GmailListThreadsResponse =
+  typeof GmailListThreadsResponseSchema.infer;
 
-export const GmailListMessagesResponseSchema = GmailSchemas.GmailListMessagesResponse;
-export type GmailListMessagesResponse = typeof GmailListMessagesResponseSchema.infer;
+export const GmailListMessagesResponseSchema =
+  GmailSchemas.GmailListMessagesResponse;
+export type GmailListMessagesResponse =
+  typeof GmailListMessagesResponseSchema.infer;
 
-export const GmailListDraftsResponseSchema = GmailSchemas.GmailListDraftsResponse;
-export type GmailListDraftsResponse = typeof GmailListDraftsResponseSchema.infer;
+export const GmailListDraftsResponseSchema =
+  GmailSchemas.GmailListDraftsResponse;
+export type GmailListDraftsResponse =
+  typeof GmailListDraftsResponseSchema.infer;
 
-export const GmailListLabelsResponseSchema = GmailSchemas.GmailListLabelsResponse;
-export type GmailListLabelsResponse = typeof GmailListLabelsResponseSchema.infer;
+export const GmailListLabelsResponseSchema =
+  GmailSchemas.GmailListLabelsResponse;
+export type GmailListLabelsResponse =
+  typeof GmailListLabelsResponseSchema.infer;
 
 export type GmailResponseSchema<T> = (response: unknown) => T | ArkErrors;
 

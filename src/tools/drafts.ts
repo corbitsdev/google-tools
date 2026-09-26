@@ -23,7 +23,10 @@ function assertSafeHeader(value: string, name: string): void {
   }
 }
 
-function recipientHeader(name: string, addresses: readonly string[] | undefined): string[] {
+function recipientHeader(
+  name: string,
+  addresses: readonly string[] | undefined,
+): string[] {
   if (addresses === undefined || addresses.length === 0) return [];
   for (const address of addresses) {
     assertSafeHeader(address, name);
@@ -40,7 +43,10 @@ function escapeHtml(value: string): string {
     .replaceAll("'", "&#39;");
 }
 
-function replyBodies(input: DraftInput, reply: ReplyContext | undefined): {
+function replyBodies(
+  input: DraftInput,
+  reply: ReplyContext | undefined,
+): {
   plaintext: string;
   html: string | undefined;
 } {
@@ -56,7 +62,8 @@ function replyBodies(input: DraftInput, reply: ReplyContext | undefined): {
       ? body
       : `${body}\r\n\r\n${quotedPlaintext}`;
   const quotedHtml = reply.htmlBody;
-  const richBody = html ?? (body.length === 0 ? undefined : `<p>${escapeHtml(body)}</p>`);
+  const richBody =
+    html ?? (body.length === 0 ? undefined : `<p>${escapeHtml(body)}</p>`);
   const mergedHtml =
     richBody === undefined && quotedHtml === undefined
       ? undefined
@@ -68,10 +75,16 @@ function encodeBase64Url(value: string): string {
   const bytes = new TextEncoder().encode(value);
   let binary = "";
   for (const byte of bytes) binary += String.fromCharCode(byte);
-  return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
+  return btoa(binary)
+    .replaceAll("+", "-")
+    .replaceAll("/", "_")
+    .replace(/=+$/, "");
 }
 
-export function createRawDraft(input: DraftInput, reply?: ReplyContext): string {
+export function createRawDraft(
+  input: DraftInput,
+  reply?: ReplyContext,
+): string {
   const subject = input.subject ?? reply?.subject ?? "";
   assertSafeHeader(subject, "subject");
   const headers = [

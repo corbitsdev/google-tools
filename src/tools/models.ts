@@ -42,15 +42,26 @@ export type GmailToolThread = {
 
 export type GmailToolDraft = Omit<
   GmailToolMessage,
-  "id" | "labelIds" | "sizeEstimate" | "snippet" | "sender" | "attachmentIds" | "attachments"
+  | "id"
+  | "labelIds"
+  | "sizeEstimate"
+  | "snippet"
+  | "sender"
+  | "attachmentIds"
+  | "attachments"
 > & {
   id: string;
 };
 
 const THREAD_METADATA_HEADERS: readonly string[] = ["From", "To", "Cc", "Date"];
-const THREAD_MINIMAL_HEADERS: readonly string[] = ["Subject", ...THREAD_METADATA_HEADERS];
+const THREAD_MINIMAL_HEADERS: readonly string[] = [
+  "Subject",
+  ...THREAD_METADATA_HEADERS,
+];
 
-function headersByName(headers: GmailHeader[] | undefined): Map<string, string> {
+function headersByName(
+  headers: GmailHeader[] | undefined,
+): Map<string, string> {
   const result = new Map<string, string>();
   for (const header of headers ?? []) {
     const name = header.name.trim().toLowerCase();
@@ -72,7 +83,10 @@ function collectParts(part: GmailMessagePart | undefined): GmailMessagePart[] {
   return [part, ...(part.parts ?? []).flatMap(collectParts)];
 }
 
-function bodyForMimeType(parts: GmailMessagePart[], mimeType: string): string | undefined {
+function bodyForMimeType(
+  parts: GmailMessagePart[],
+  mimeType: string,
+): string | undefined {
   const values = parts.flatMap((part) => {
     if (
       part.mimeType !== mimeType ||
@@ -122,10 +136,14 @@ function recipients(value: string | undefined): string[] | undefined {
   return result;
 }
 
-function dateFromMessage(message: GmailMessage, headerDate: string | undefined): string | undefined {
+function dateFromMessage(
+  message: GmailMessage,
+  headerDate: string | undefined,
+): string | undefined {
   const source = headerDate ?? message.internalDate;
   if (source === undefined) return undefined;
-  const timestamp = headerDate === undefined ? Number(source) : Date.parse(source);
+  const timestamp =
+    headerDate === undefined ? Number(source) : Date.parse(source);
   if (!Number.isFinite(timestamp)) return undefined;
   return new Date(timestamp).toISOString().slice(0, 10);
 }
@@ -137,23 +155,32 @@ function baseMessage(message: GmailMessage): GmailToolMessage {
     id: message.id,
     ...(message.threadId === undefined ? {} : { threadId: message.threadId }),
     labelIds: message.labelIds ?? [],
-    ...(message.sizeEstimate === undefined ? {} : { sizeEstimate: message.sizeEstimate }),
+    ...(message.sizeEstimate === undefined
+      ? {}
+      : { sizeEstimate: message.sizeEstimate }),
     ...(date === undefined ? {} : { date }),
   };
 }
 
-function messageMetadata(message: GmailMessage, includeSubject: boolean): GmailToolMessage {
+function messageMetadata(
+  message: GmailMessage,
+  includeSubject: boolean,
+): GmailToolMessage {
   const headers = headersByName(message.payload?.headers);
   const toRecipients = recipients(headers.get("to"));
   const ccRecipients = recipients(headers.get("cc"));
   const bccRecipients = recipients(headers.get("bcc"));
   return {
     ...baseMessage(message),
-    ...(includeSubject && message.snippet !== undefined ? { snippet: message.snippet } : {}),
+    ...(includeSubject && message.snippet !== undefined
+      ? { snippet: message.snippet }
+      : {}),
     ...(includeSubject && headers.get("subject") !== undefined
       ? { subject: headers.get("subject") }
       : {}),
-    ...(headers.get("from") === undefined ? {} : { sender: headers.get("from") }),
+    ...(headers.get("from") === undefined
+      ? {}
+      : { sender: headers.get("from") }),
     ...(toRecipients === undefined ? {} : { toRecipients }),
     ...(ccRecipients === undefined ? {} : { ccRecipients }),
     ...(bccRecipients === undefined ? {} : { bccRecipients }),
@@ -176,7 +203,9 @@ function attachments(parts: GmailMessagePart[]): GmailAttachment[] {
   });
 }
 
-export function metadataHeadersForView(view: GmailThreadView): readonly string[] {
+export function metadataHeadersForView(
+  view: GmailThreadView,
+): readonly string[] {
   return view === "THREAD_VIEW_MINIMAL"
     ? THREAD_MINIMAL_HEADERS
     : THREAD_METADATA_HEADERS;
@@ -214,7 +243,9 @@ export function toToolThread(
 ): GmailToolThread {
   return {
     id: thread.id,
-    messages: (thread.messages ?? []).map((message) => toToolMessage(message, format)),
+    messages: (thread.messages ?? []).map((message) =>
+      toToolMessage(message, format),
+    ),
   };
 }
 
