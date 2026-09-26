@@ -9,13 +9,11 @@ import {
   GmailThreadSchema,
   parseGmailResponse,
   type GmailDraft,
-  type GmailHeader,
   type GmailListDraftsResponse,
   type GmailListLabelsResponse,
   type GmailListMessagesResponse,
   type GmailListThreadsResponse,
   type GmailMessage,
-  type GmailMessagePart,
   type GmailResponseSchema,
   type GmailThread,
 } from "./schemas.js";

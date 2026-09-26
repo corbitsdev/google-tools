@@ -190,10 +190,12 @@ async function lookupThreads(
   view: GmailThreadView,
   signal: AbortSignal,
 ) {
-  const threads = new Array<{
+  const threads = Array.from<{
     id: string;
     messages: ReturnType<typeof toThreadListMessage>[];
-  }>(threadIds.length);
+  }>({
+    length: threadIds.length,
+  });
   let nextIndex = 0;
   let failed = false;
   const worker = async () => {
