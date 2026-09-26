@@ -6,7 +6,10 @@ import type { HttpMediatedCredential } from "@intx/types";
 import { createRuntimeCapabilities } from "@intx/types/runtime-capabilities";
 
 import type { GmailFetch } from "../src/client/index.js";
-import { createGmailTools, type GmailTools } from "../src/tools/create-tools.js";
+import {
+  createGmailTools,
+  type GmailTools,
+} from "../src/tools/create-tools.js";
 
 export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -68,11 +71,16 @@ function parseStoredGmailToken(value: unknown): StoredGmailToken {
   }
   const grantedScopes = getArray(value, "grantedScopes");
   const scopes =
-    grantedScopes?.filter((scope): scope is string => typeof scope === "string") ?? [];
+    grantedScopes?.filter(
+      (scope): scope is string => typeof scope === "string",
+    ) ?? [];
   if (grantedScopes !== undefined && scopes.length !== grantedScopes.length) {
     throw new Error("grantedScopes must contain strings");
   }
-  return { refreshToken, ...(grantedScopes === undefined ? {} : { grantedScopes: scopes }) };
+  return {
+    refreshToken,
+    ...(grantedScopes === undefined ? {} : { grantedScopes: scopes }),
+  };
 }
 
 function isMissingFileError(error: unknown): boolean {
@@ -113,15 +121,20 @@ function readGmailOAuthConfig(
   const clientId = env.GMAIL_LIVE_CLIENT_ID?.trim();
   const clientSecret = env.GMAIL_LIVE_CLIENT_SECRET?.trim();
   if (clientId === undefined || clientId.length === 0) {
-    throw new Error("GMAIL_LIVE_CLIENT_ID is required for the live Gmail suite");
+    throw new Error(
+      "GMAIL_LIVE_CLIENT_ID is required for the live Gmail suite",
+    );
   }
   if (clientSecret === undefined || clientSecret.length === 0) {
-    throw new Error("GMAIL_LIVE_CLIENT_SECRET is required for the live Gmail suite");
+    throw new Error(
+      "GMAIL_LIVE_CLIENT_SECRET is required for the live Gmail suite",
+    );
   }
   return {
     clientId,
     clientSecret,
-    tokenFile: env.GMAIL_LIVE_TOKEN_FILE?.trim() || ".local/gmail-live-token.json",
+    tokenFile:
+      env.GMAIL_LIVE_TOKEN_FILE?.trim() || ".local/gmail-live-token.json",
     port: parseLivePort(env.GMAIL_LIVE_PORT),
     scopes: GMAIL_LIVE_SCOPES,
   };
@@ -131,12 +144,16 @@ function parseLivePort(value: string | undefined): number {
   if (value === undefined || value.trim().length === 0) return 8765;
   const port = Number(value);
   if (!Number.isInteger(port) || port < 1024 || port > 65_535) {
-    throw new Error("GMAIL_LIVE_PORT must be an integer between 1024 and 65535");
+    throw new Error(
+      "GMAIL_LIVE_PORT must be an integer between 1024 and 65535",
+    );
   }
   return port;
 }
 
-async function parseTokenResponse(response: Response): Promise<Record<string, unknown>> {
+async function parseTokenResponse(
+  response: Response,
+): Promise<Record<string, unknown>> {
   const raw = await response.text();
   let body: Record<string, unknown> | undefined;
   try {
@@ -260,9 +277,12 @@ async function authorizeGmail(
       }
       stopServer();
       code.resolve(authorizationCode);
-      return new Response("Authorization complete. You can close this window.", {
-        headers: { "Content-Type": "text/html" },
-      });
+      return new Response(
+        "Authorization complete. You can close this window.",
+        {
+          headers: { "Content-Type": "text/html" },
+        },
+      );
     },
   });
   stopServer = () => server.stop();
@@ -279,11 +299,16 @@ async function authorizeGmail(
     state,
   }).toString();
 
-  const timer = setTimeout(() => {
-    stopServer();
-    code.reject(new Error("timed out waiting for Google OAuth callback"));
-  }, 5 * 60 * 1_000);
-  logger.info(`Open this URL to authorize the Gmail live test:\n${authorizationUrl}`);
+  const timer = setTimeout(
+    () => {
+      stopServer();
+      code.reject(new Error("timed out waiting for Google OAuth callback"));
+    },
+    5 * 60 * 1_000,
+  );
+  logger.info(
+    `Open this URL to authorize the Gmail live test:\n${authorizationUrl}`,
+  );
   try {
     const child = Bun.spawn(["open", authorizationUrl.toString()], {
       stdout: "ignore",
@@ -299,7 +324,12 @@ async function authorizeGmail(
     stopServer();
   });
 
-  return exchangeAuthorizationCode(config, authorizationCode, redirectUri, fetchImpl);
+  return exchangeAuthorizationCode(
+    config,
+    authorizationCode,
+    redirectUri,
+    fetchImpl,
+  );
 }
 
 const GMAIL_API_ORIGIN = "https://gmail.googleapis.com";
@@ -350,7 +380,10 @@ function createStandaloneGmailCredential(
     }
     const headers = new Headers(sourceRequest?.headers);
     new Headers(init?.headers).forEach((value, key) => headers.set(key, value));
-    headers.set("Authorization", `Bearer ${await getAccessToken(forceRefresh)}`);
+    headers.set(
+      "Authorization",
+      `Bearer ${await getAccessToken(forceRefresh)}`,
+    );
 
     return networkFetch(
       new Request(sourceRequest ?? url, {
@@ -365,8 +398,13 @@ function createStandaloneGmailCredential(
     kind: "http",
     async fetch(input, init) {
       const response = await authenticatedFetch(input, init);
-      const method = (init?.method ?? (input instanceof Request ? input.method : "GET")).toUpperCase();
-      if (response.status !== 401 || !["GET", "HEAD", "OPTIONS"].includes(method)) {
+      const method = (
+        init?.method ?? (input instanceof Request ? input.method : "GET")
+      ).toUpperCase();
+      if (
+        response.status !== 401 ||
+        !["GET", "HEAD", "OPTIONS"].includes(method)
+      ) {
         return response;
       }
       return authenticatedFetch(input, init, true);
@@ -400,7 +438,9 @@ async function findGmailFixture(
   }
   const threads = getArray(result.content.data, "threads");
   if (threads === undefined || threads.length !== 1) {
-    throw new Error(`fixture query must match exactly one Gmail thread: ${query}`);
+    throw new Error(
+      `fixture query must match exactly one Gmail thread: ${query}`,
+    );
   }
   const thread = threads[0];
   if (!isRecord(thread)) {
@@ -409,10 +449,14 @@ async function findGmailFixture(
   const threadId = getString(thread, "id");
   const messages = getArray(thread, "messages");
   if (messages === undefined || messages.length !== 1) {
-    throw new Error(`fixture thread must contain exactly one Gmail message: ${query}`);
+    throw new Error(
+      `fixture thread must contain exactly one Gmail message: ${query}`,
+    );
   }
   const firstMessage = messages[0];
-  const messageId = isRecord(firstMessage) ? getString(firstMessage, "id") : undefined;
+  const messageId = isRecord(firstMessage)
+    ? getString(firstMessage, "id")
+    : undefined;
   if (
     typeof threadId !== "string" ||
     threadId.length === 0 ||
@@ -461,15 +505,22 @@ export async function createLiveHarness(): Promise<LiveHarness> {
   const query = process.env.GMAIL_LIVE_FIXTURE_QUERY?.trim();
   if (query === undefined || query.length === 0) {
     await tools.dispose();
-    throw new Error("GMAIL_LIVE_FIXTURE_QUERY is required for the live Gmail suite");
+    throw new Error(
+      "GMAIL_LIVE_FIXTURE_QUERY is required for the live Gmail suite",
+    );
   }
 
   try {
-    const fixture = await findGmailFixture(tools, query, new AbortController().signal);
+    const fixture = await findGmailFixture(
+      tools,
+      query,
+      new AbortController().signal,
+    );
     return {
       tools,
       fixture,
-      deleteDraftsForSubject: (subject) => deleteDraftsForSubject(tools, credential, subject),
+      deleteDraftsForSubject: (subject) =>
+        deleteDraftsForSubject(tools, credential, subject),
       async dispose() {
         await tools.dispose();
       },
@@ -506,22 +557,33 @@ async function deleteDraftsForSubject(
       { method: "DELETE" },
     );
     if (!response.ok) {
-      throw new Error(`failed to delete live test draft: HTTP ${String(response.status)}`);
+      throw new Error(
+        `failed to delete live test draft: HTTP ${String(response.status)}`,
+      );
     }
   }
 }
 
-export function toolData(result: unknown, toolName: string): Record<string, unknown> {
-  if (!isRecord(result) || result.isError === true || !isRecord(result.content)) {
+export function toolData(
+  result: unknown,
+  toolName: string,
+): Record<string, unknown> {
+  if (
+    !isRecord(result) ||
+    result.isError === true ||
+    !isRecord(result.content)
+  ) {
     throw new Error(`${toolName} failed`);
   }
   const data = result.content.data;
-  if (!isRecord(data)) throw new Error(`${toolName} did not return structured data`);
+  if (!isRecord(data))
+    throw new Error(`${toolName} did not return structured data`);
   return data;
 }
 
 export function toolId(result: unknown, toolName: string): string {
   const id = getString(toolData(result, toolName), "id");
-  if (id === undefined || id.length === 0) throw new Error(`${toolName} did not return an ID`);
+  if (id === undefined || id.length === 0)
+    throw new Error(`${toolName} did not return an ID`);
   return id;
 }

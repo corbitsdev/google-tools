@@ -10,7 +10,7 @@ Instructions for AI agents working in this repository.
 
 - **Runtime:** Bun + TypeScript, ES modules only.
 - Touch only code related to the task.
-- Comment *why*, never *what*.
+- Comment _why_, never _what_.
 - No emojis in code or docs.
 
 ## Build & Validation

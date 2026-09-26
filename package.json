@@ -1,31 +1,31 @@
 {
   "name": "@corbits/google-tools",
   "version": "0.1.1",
-  "type": "module",
-  "license": "LGPL-2.1-only",
   "description": "Corbits Google tools for Interchange, starting with Gmail.",
   "keywords": [
     "corbits",
-    "google",
     "gmail",
-    "tools",
-    "interchange"
+    "google",
+    "interchange",
+    "tools"
   ],
-  "author": "Sawyer Cutler <sawyer@dirtroad.dev>",
   "homepage": "https://github.com/corbitsdev/google-tools#readme",
+  "bugs": {
+    "url": "https://github.com/corbitsdev/google-tools/issues"
+  },
+  "license": "LGPL-2.1-only",
+  "author": "Sawyer Cutler <sawyer@dirtroad.dev>",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/corbitsdev/google-tools.git"
   },
-  "bugs": {
-    "url": "https://github.com/corbitsdev/google-tools/issues"
-  },
-  "publishConfig": {
-    "access": "public"
-  },
-  "engines": {
-    "node": ">=24"
-  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "type": "module",
+  "sideEffects": false,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -38,23 +38,9 @@
       "default": "./dist/sidecar-bundle.js"
     }
   },
-  "interchange": {
-    "tools": "./dist/sidecar-bundle.js",
-    "credentials": [
-      {
-        "handle": "gmail-api",
-        "scopes": [
-          "https://www.googleapis.com/auth/gmail.modify"
-        ]
-      }
-    ]
+  "publishConfig": {
+    "access": "public"
   },
-  "files": [
-    "dist",
-    "LICENSE",
-    "README.md"
-  ],
-  "sideEffects": false,
   "scripts": {
     "typecheck": "tsc -p tsconfig.typecheck.json --noEmit",
     "typecheck:e2e": "tsc -p tsconfig.e2e.json --noEmit",
@@ -66,9 +52,8 @@
     "format": "oxfmt",
     "format:check": "oxfmt --check"
   },
-  "peerDependencies": {
-    "@intx/agent": "^0.4.0",
-    "@intx/types": "^0.4.0"
+  "dependencies": {
+    "arktype": "^2.2.3"
   },
   "devDependencies": {
     "@intx/agent": "0.4.0",
@@ -80,7 +65,22 @@
     "oxlint": "1.85.0",
     "typescript": "5.9.3"
   },
-  "dependencies": {
-    "arktype": "^2.2.3"
+  "peerDependencies": {
+    "@intx/agent": "^0.4.0",
+    "@intx/types": "^0.4.0"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "interchange": {
+    "tools": "./dist/sidecar-bundle.js",
+    "credentials": [
+      {
+        "handle": "gmail-api",
+        "scopes": [
+          "https://www.googleapis.com/auth/gmail.modify"
+        ]
+      }
+    ]
   }
 }
