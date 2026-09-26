@@ -21,13 +21,11 @@
   },
   "files": [
     "dist",
-    "LICENSE",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
   "type": "module",
   "sideEffects": false,
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -42,15 +40,15 @@
     "access": "public"
   },
   "scripts": {
-    "typecheck": "tsc -p tsconfig.typecheck.json --noEmit",
-    "typecheck:e2e": "tsc -p tsconfig.e2e.json --noEmit",
     "build": "rm -rf dist && tsc -p tsconfig.build.json",
     "prepack": "bun run build",
-    "test": "bun test src",
-    "test:e2e": "bun test e2e",
+    "typecheck": "tsc --noEmit",
     "lint": "oxlint",
     "format": "oxfmt",
-    "format:check": "oxfmt --check"
+    "format:check": "oxfmt --check",
+    "test": "bun test src --pass-with-no-tests",
+    "test:e2e": "bun test e2e",
+    "check": "bun run typecheck && bun run lint && bun run format:check && bun run test"
   },
   "dependencies": {
     "arktype": "^2.2.3"
@@ -70,6 +68,7 @@
     "@intx/types": "^0.4.0"
   },
   "engines": {
+    "bun": ">=1.2.0",
     "node": ">=24"
   },
   "interchange": {
