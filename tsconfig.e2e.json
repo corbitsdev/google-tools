@@ -1,7 +1,0 @@
-{
-  "extends": "./tsconfig.typecheck.json",
-  "compilerOptions": {
-    "types": ["node", "@types/bun"]
-  },
-  "include": ["src", "e2e"]
-}
