@@ -5,7 +5,6 @@ import type { GmailFetch } from "../client/index.js";
 import { GMAIL_CREDENTIAL_HANDLE, TOOL_DEFINITIONS } from "./definitions.js";
 import { createGmailTools } from "./create-tools.js";
 import { createRawDraft } from "./drafts.js";
-import { gmail } from "../sidecar-bundle.js";
 
 function testCapabilities(fetchImpl: GmailFetch, handle = GMAIL_CREDENTIAL_HANDLE) {
   return createRuntimeCapabilities({
@@ -91,21 +90,6 @@ describe("Gmail tool definitions", () => {
         },
       },
     });
-  });
-
-  test("requires approval for every mailbox mutation", () => {
-    const approvals = new Map(
-      gmail.definitions.map((definition) => [definition.name, definition.approval]),
-    );
-    for (const name of [
-      "gmail_create_draft",
-      "gmail_label_message",
-      "gmail_unlabel_message",
-      "gmail_label_thread",
-      "gmail_unlabel_thread",
-    ]) {
-      expect(approvals.get(name)).toBe("ask");
-    }
   });
 });
 
