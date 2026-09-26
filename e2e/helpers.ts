@@ -385,12 +385,11 @@ function createStandaloneGmailCredential(
       `Bearer ${await getAccessToken(forceRefresh)}`,
     );
 
+    const request: RequestInit = { ...init, headers, redirect: "manual" };
     return networkFetch(
-      new Request(sourceRequest ?? url, {
-        ...init,
-        headers,
-        redirect: "manual",
-      }),
+      sourceRequest === undefined
+        ? new Request(url.href, request)
+        : new Request(sourceRequest, request),
     );
   }
 
