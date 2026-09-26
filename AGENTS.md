@@ -17,5 +17,5 @@ Instructions for AI agents working in this repository.
 
 ```bash
 bun install
-bun test
+bun run test
 ```

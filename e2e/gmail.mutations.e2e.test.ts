@@ -1,10 +1,12 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 
-import { getArray, getString, isRecord } from "./json.js";
 import {
   createLiveHarness,
+  getArray,
+  getString,
+  isRecord,
   toolData,
-} from "./live-harness.js";
+} from "./helpers.js";
 
 const LIVE_TEST_TIMEOUT_MS = 60_000;
 const mutationEnabled =
