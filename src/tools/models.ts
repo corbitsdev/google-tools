@@ -101,7 +101,7 @@ function bodyForMimeType(
   return values.length === 0 ? undefined : values.join("\n\n");
 }
 
-function recipients(value: string | undefined): string[] | undefined {
+export function recipients(value: string | undefined): string[] | undefined {
   if (value === undefined || value.length === 0) return undefined;
   const result: string[] = [];
   let start = 0;
