@@ -752,6 +752,92 @@ describe("createGmailTools", () => {
     );
   });
 
+  test("reply drafts address Reply-To, or the recipients of a sent message", async () => {
+    const original = (labelIds: string[]) => ({
+      id: "message-1",
+      threadId: "thread-1",
+      labelIds,
+      payload: {
+        mimeType: "text/plain",
+        headers: [
+          { name: "From", value: "List <noreply@list.example>" },
+          { name: "To", value: "Ada <ada@example.com>" },
+          {
+            name: "Reply-To",
+            value: "Real <real@example.com>, other@example.com",
+          },
+          { name: "Subject", value: "Hello" },
+          { name: "Message-ID", value: "<message-1@example.com>" },
+        ],
+        body: { data: encodeBase64Url("Original") },
+      },
+    });
+    const headersFor = async (labelIds: string[], to?: string[]) => {
+      let raw = "";
+      const tools = createGmailTools({
+        capabilities: testCapabilities(async (input, init) => {
+          const url = new URL(String(input));
+          if (url.pathname.endsWith("/messages/message-1")) {
+            return new Response(JSON.stringify(original(labelIds)));
+          }
+          raw = draftRawFromRequest(init);
+          return new Response(JSON.stringify({ id: "draft-1" }));
+        }),
+      });
+      await tools.run(
+        {
+          id: "call-reply",
+          name: "gmail_create_draft",
+          arguments: {
+            replyToMessageId: "message-1",
+            body: "Thanks",
+            ...(to === undefined ? {} : { to }),
+          },
+        },
+        new AbortController().signal,
+      );
+      await tools.dispose();
+      return Buffer.from(raw, "base64url").toString().split("\r\n\r\n")[0];
+    };
+
+    expect(await headersFor(["INBOX"])).toContain(
+      "To: real@example.com, other@example.com\r\nSubject: Re: Hello",
+    );
+    expect(await headersFor(["INBOX"], [])).toContain(
+      "To: real@example.com, other@example.com",
+    );
+    expect(await headersFor(["SENT"])).toContain("To: ada@example.com");
+  });
+
+  test("keeps an existing Re: prefix on reply subjects", () => {
+    const raw = createRawDraft(
+      { body: "Reply" },
+      { messageId: "<message-1@example.com>", subject: "RE: Original" },
+    );
+    expect(Buffer.from(raw, "base64url").toString()).toContain(
+      "Subject: RE: Original\r\n",
+    );
+  });
+
+  test("RFC 2047-encodes non-ASCII subjects", () => {
+    const subject = "Grüße – 日本 ".repeat(6);
+    const raw = Buffer.from(
+      createRawDraft({ to: ["ada@example.com"], subject, body: "x" }),
+      "base64url",
+    ).toString();
+    const header = /^Subject: (.*?)\r\n(?! )/ms.exec(raw)?.[1] ?? "";
+    const words = header.split("\r\n ");
+    expect(words.length).toBeGreaterThan(1);
+    for (const word of words) {
+      expect(word).toMatch(/^=\?UTF-8\?B\?[A-Za-z0-9+/=]+\?=$/);
+      expect(word.length).toBeLessThanOrEqual(75);
+    }
+    const decoded = words
+      .map((word) => Buffer.from(word.slice(10, -2), "base64").toString())
+      .join("");
+    expect(decoded).toBe(subject);
+  });
+
   test("applies and removes labels on messages and threads", async () => {
     const fetchImpl = createFetchImpl(async (input, init) => {
       const url = new URL(String(input));

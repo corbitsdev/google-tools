@@ -18,6 +18,7 @@ import {
 import { GMAIL_CREDENTIAL_HANDLE, TOOL_DEFINITIONS } from "./definitions.js";
 import {
   metadataHeadersForView,
+  recipients,
   toToolDraft,
   toThreadListMessage,
   toToolMessage,
@@ -127,7 +128,11 @@ async function replyContext(
   const normalized = toToolMessage(original, "FULL_CONTENT");
   const originalMessageId = headerValue(original, "Message-ID");
   const originalReferences = headerValue(original, "References");
-  const recipient = inputRecipients(original, normalized);
+  const recipient = inputRecipients(
+    original,
+    normalized,
+    headerValue(original, "Reply-To"),
+  );
   return {
     ...(original.threadId === undefined ? {} : { threadId: original.threadId }),
     ...(originalMessageId === undefined
@@ -152,14 +157,16 @@ async function replyContext(
 function inputRecipients(
   original: { labelIds?: readonly string[] },
   normalized: ReturnType<typeof toToolMessage>,
+  replyTo: string | undefined,
 ): readonly string[] | undefined {
-  const replyAddress = original.labelIds?.includes("SENT")
-    ? normalized.toRecipients?.[0]
-    : normalized.sender;
-  const recipient = plainEmailAddress(replyAddress);
-  return recipient === undefined || recipient.length === 0
-    ? undefined
-    : [recipient];
+  const addresses = original.labelIds?.includes("SENT")
+    ? normalized.toRecipients?.slice(0, 1)
+    : (recipients(replyTo) ?? [normalized.sender]);
+  const result = (addresses ?? []).flatMap((address) => {
+    const recipient = plainEmailAddress(address);
+    return recipient === undefined || recipient.length === 0 ? [] : [recipient];
+  });
+  return result.length === 0 ? undefined : result;
 }
 
 async function listDraftsForQuery(

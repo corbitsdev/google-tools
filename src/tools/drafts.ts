@@ -34,6 +34,40 @@ function recipientHeader(
   return [`${name}: ${addresses.join(", ")}`];
 }
 
+function replySubject(subject: string): string {
+  return /^re:/i.test(subject) ? subject : `Re: ${subject}`;
+}
+
+// RFC 2047 caps an encoded word at 75 characters; 45 bytes base64 to 60.
+const MAX_ENCODED_WORD_BYTES = 45;
+
+function encodeSubject(subject: string): string {
+  if (/^[\x20-\x7e]*$/.test(subject)) return subject;
+  const encoder = new TextEncoder();
+  const words: string[] = [];
+  let chunk = "";
+  for (const character of subject) {
+    if (
+      encoder.encode(chunk + character).length > MAX_ENCODED_WORD_BYTES &&
+      chunk.length > 0
+    ) {
+      words.push(chunk);
+      chunk = "";
+    }
+    chunk += character;
+  }
+  words.push(chunk);
+  return words
+    .map((word) => {
+      let binary = "";
+      for (const byte of encoder.encode(word)) {
+        binary += String.fromCharCode(byte);
+      }
+      return `=?UTF-8?B?${btoa(binary)}?=`;
+    })
+    .join("\r\n ");
+}
+
 function escapeHtml(value: string): string {
   return value
     .replaceAll("&", "&amp;")
@@ -85,13 +119,17 @@ export function createRawDraft(
   input: DraftInput,
   reply?: ReplyContext,
 ): string {
-  const subject = input.subject ?? reply?.subject ?? "";
+  const subject =
+    input.subject ??
+    (reply?.subject === undefined ? "" : replySubject(reply.subject));
   assertSafeHeader(subject, "subject");
+  const to =
+    input.to === undefined || input.to.length === 0 ? reply?.to : input.to;
   const headers = [
-    ...recipientHeader("To", input.to ?? reply?.to),
+    ...recipientHeader("To", to),
     ...recipientHeader("Cc", input.cc),
     ...recipientHeader("Bcc", input.bcc),
-    `Subject: ${subject}`,
+    `Subject: ${encodeSubject(subject)}`,
     "MIME-Version: 1.0",
   ];
   if (reply?.messageId !== undefined) {
