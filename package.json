@@ -69,6 +69,7 @@
   },
   "devDependencies": {
     "@intx/agent": "0.4.0",
+    "@intx/storage-isogit": "0.4.0",
     "@intx/types": "0.4.0",
     "@types/bun": "1.3.14",
     "@types/node": "22.10.5",

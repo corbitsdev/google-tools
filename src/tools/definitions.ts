@@ -16,7 +16,7 @@ import {
 
 export const GMAIL_CREDENTIAL_HANDLE = "gmail-api";
 
-export type GmailToolCatalogEntry = ToolDefinition & { approval?: "ask" };
+export type GmailToolCatalogEntry = ToolDefinition & { approval: "ask" };
 
 export const GMAIL_TOOL_CATALOG: GmailToolCatalogEntry[] = [
   {
@@ -24,21 +24,25 @@ export const GMAIL_TOOL_CATALOG: GmailToolCatalogEntry[] = [
     description:
       "Search the authenticated Gmail mailbox and return thread summaries with an optional next page token.",
     inputSchema: createInputJSONSchema(SearchThreadsInput),
+    approval: "ask",
   },
   {
     name: "gmail_get_thread",
     description: "Fetch one Gmail thread with selected message detail.",
     inputSchema: createInputJSONSchema(GetThreadInput),
+    approval: "ask",
   },
   {
     name: "gmail_get_message",
     description: "Fetch one Gmail message with selected detail.",
     inputSchema: createInputJSONSchema(GetMessageInput),
+    approval: "ask",
   },
   {
     name: "gmail_list_labels",
     description: "List labels available in the authenticated Gmail mailbox.",
     inputSchema: createInputJSONSchema(ListLabelsInput),
+    approval: "ask",
   },
   {
     name: "gmail_create_draft",
@@ -51,6 +55,7 @@ export const GMAIL_TOOL_CATALOG: GmailToolCatalogEntry[] = [
     name: "gmail_list_drafts",
     description: "List Gmail drafts with Gmail-query filtering and pagination.",
     inputSchema: createInputJSONSchema(ListDraftsInput),
+    approval: "ask",
   },
   {
     name: "gmail_label_message",
@@ -79,5 +84,9 @@ export const GMAIL_TOOL_CATALOG: GmailToolCatalogEntry[] = [
 ];
 
 export const TOOL_DEFINITIONS: ToolDefinition[] = GMAIL_TOOL_CATALOG.map(
-  ({ approval: _approval, ...definition }) => definition,
+  (definition) => ({
+    name: definition.name,
+    description: definition.description,
+    inputSchema: definition.inputSchema,
+  }),
 );
