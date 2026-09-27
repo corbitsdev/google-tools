@@ -35,7 +35,8 @@ function recipientHeader(
 }
 
 function replySubject(subject: string): string {
-  return /^re:/i.test(subject) ? subject : `Re: ${subject}`;
+  const trimmed = subject.trim();
+  return /^re:/i.test(trimmed) ? trimmed : `Re: ${trimmed}`;
 }
 
 // RFC 2047 caps an encoded word at 75 characters; 45 bytes base64 to 60.

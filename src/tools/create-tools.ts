@@ -160,12 +160,20 @@ function inputRecipients(
   normalized: ReturnType<typeof toToolMessage>,
   replyTo: string | undefined,
 ): readonly string[] | undefined {
-  const addresses = original.labelIds?.includes("SENT")
-    ? normalized.toRecipients?.slice(0, 1)
-    : (recipients(replyTo) ?? [normalized.sender]);
-  const result = (addresses ?? []).flatMap((address) => {
-    const recipient = plainEmailAddress(address);
-    return recipient === undefined || recipient.length === 0 ? [] : [recipient];
+  if (original.labelIds?.includes("SENT")) {
+    return emailAddresses(normalized.toRecipients?.slice(0, 1));
+  }
+  return (
+    emailAddresses(recipients(replyTo)) ?? emailAddresses([normalized.sender])
+  );
+}
+
+function emailAddresses(
+  values: readonly (string | undefined)[] | undefined,
+): readonly string[] | undefined {
+  const result = (values ?? []).flatMap((value) => {
+    const address = plainEmailAddress(value);
+    return address?.includes("@") ? [address] : [];
   });
   return result.length === 0 ? undefined : result;
 }

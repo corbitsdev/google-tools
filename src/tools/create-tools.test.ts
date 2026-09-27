@@ -878,6 +878,55 @@ describe("createGmailTools", () => {
     expect(await headersFor(["SENT"])).toContain("To: ada@example.com");
   });
 
+  test("reply drafts fall back to the sender when Reply-To has no address", async () => {
+    let raw = "";
+    const tools = createGmailTools({
+      capabilities: testCapabilities(async (input, init) => {
+        if (new URL(String(input)).pathname.endsWith("/messages/message-1")) {
+          return new Response(
+            JSON.stringify({
+              id: "message-1",
+              labelIds: ["INBOX"],
+              payload: {
+                mimeType: "text/plain",
+                headers: [
+                  { name: "From", value: "Sender <sender@example.com>" },
+                  { name: "Reply-To", value: "undisclosed-recipients:;" },
+                  { name: "Subject", value: "Hello" },
+                ],
+                body: { data: encodeBase64Url("Original") },
+              },
+            }),
+          );
+        }
+        raw = draftRawFromRequest(init);
+        return new Response(JSON.stringify({ id: "draft-1" }));
+      }),
+    });
+    await tools.run(
+      {
+        id: "call-reply",
+        name: "gmail_create_draft",
+        arguments: { replyToMessageId: "message-1", body: "Thanks" },
+      },
+      new AbortController().signal,
+    );
+    await tools.dispose();
+    expect(Buffer.from(raw, "base64url").toString()).toContain(
+      "To: sender@example.com\r\n",
+    );
+  });
+
+  test("trims reply subjects before checking the Re: prefix", () => {
+    const raw = createRawDraft(
+      { body: "Reply" },
+      { messageId: "<message-1@example.com>", subject: "  Re: Original " },
+    );
+    expect(Buffer.from(raw, "base64url").toString()).toContain(
+      "Subject: Re: Original\r\n",
+    );
+  });
+
   test("keeps an existing Re: prefix on reply subjects", () => {
     const raw = createRawDraft(
       { body: "Reply" },
