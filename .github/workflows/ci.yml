@@ -18,6 +18,8 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
+      - run: bun run lint
+      - run: bun run format:check
       - run: bun run typecheck
       - run: bun run typecheck:e2e
       - run: bun run test

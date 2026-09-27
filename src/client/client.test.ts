@@ -50,7 +50,10 @@ describe("createGmailClient", () => {
 
     const client = createGmailClient({ fetchImpl });
     await expect(
-      client.getMessage("message/1", { format: "metadata", metadataHeaders: [] }),
+      client.getMessage("message/1", {
+        format: "metadata",
+        metadataHeaders: [],
+      }),
     ).resolves.toEqual({ id: "message/1" });
   });
 
@@ -63,7 +66,9 @@ describe("createGmailClient", () => {
 
     await expect(
       client.listMessages({ query: "in:inbox", pageSize: 10 }),
-    ).rejects.toThrow("Gmail API response did not match the expected list-messages shape");
+    ).rejects.toThrow(
+      "Gmail API response did not match the expected list-messages shape",
+    );
   });
 
   test("rejects malformed Gmail headers", async () => {
@@ -79,14 +84,18 @@ describe("createGmailClient", () => {
 
     await expect(
       client.getMessage("message-1", { format: "full" }),
-    ).rejects.toThrow("Gmail API response did not match the expected get-message shape");
+    ).rejects.toThrow(
+      "Gmail API response did not match the expected get-message shape",
+    );
   });
 
   test("rejects an empty successful response body", async () => {
     const fetchImpl: GmailFetch = async () => new Response("", { status: 200 });
     const client = createGmailClient({ fetchImpl });
 
-    await expect(client.listLabels()).rejects.toThrow("response body was empty");
+    await expect(client.listLabels()).rejects.toThrow(
+      "response body was empty",
+    );
   });
 
   test("maps non-success responses to GmailApiError", async () => {

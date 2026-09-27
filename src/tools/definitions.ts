@@ -77,7 +77,8 @@ export const GMAIL_TOOL_CATALOG: GmailToolCatalogEntry[] = [
   },
   {
     name: "gmail_unlabel_thread",
-    description: "Remove one or more labels from every message in a Gmail thread.",
+    description:
+      "Remove one or more labels from every message in a Gmail thread.",
     inputSchema: createInputJSONSchema(UnlabelThreadInput),
     approval: "ask",
   },

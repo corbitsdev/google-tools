@@ -6,7 +6,10 @@ import { GMAIL_CREDENTIAL_HANDLE } from "./definitions.js";
 import { createGmailTools } from "./create-tools.js";
 import { createRawDraft } from "./drafts.js";
 
-function testCapabilities(fetchImpl: GmailFetch, handle = GMAIL_CREDENTIAL_HANDLE) {
+function testCapabilities(
+  fetchImpl: GmailFetch,
+  handle = GMAIL_CREDENTIAL_HANDLE,
+) {
   return createRuntimeCapabilities({
     credentials: {
       async resolve(requested) {
@@ -27,8 +30,11 @@ function encodeBase64Url(value: string): string {
   return Buffer.from(value).toString("base64url");
 }
 
-function jsonRequestBody(init: RequestInit | undefined): Record<string, unknown> {
-  if (typeof init?.body !== "string") throw new Error("expected JSON string body");
+function jsonRequestBody(
+  init: RequestInit | undefined,
+): Record<string, unknown> {
+  if (typeof init?.body !== "string")
+    throw new Error("expected JSON string body");
   const parsed: unknown = JSON.parse(init.body);
   if (!isRecord(parsed)) {
     throw new Error("expected JSON object body");
@@ -42,7 +48,8 @@ function draftRawFromRequest(init: RequestInit | undefined): string {
   if (!isRecord(message)) {
     throw new Error("expected draft message object");
   }
-  if (typeof message.raw !== "string") throw new Error("expected draft raw message");
+  if (typeof message.raw !== "string")
+    throw new Error("expected draft raw message");
   return message.raw;
 }
 
@@ -101,7 +108,9 @@ describe("createGmailTools", () => {
       );
     });
 
-    const tools = createGmailTools({ capabilities: testCapabilities(fetchImpl) });
+    const tools = createGmailTools({
+      capabilities: testCapabilities(fetchImpl),
+    });
     const result = await tools.run(
       {
         id: "call-1",
@@ -147,19 +156,31 @@ describe("createGmailTools", () => {
       const url = new URL(String(input));
       if (url.pathname === "/gmail/v1/users/me/threads") {
         return new Response(
-          JSON.stringify({ threads: Array.from({ length: 11 }, (_, index) => ({ id: `thread-${index + 1}` })) }),
+          JSON.stringify({
+            threads: Array.from({ length: 11 }, (_, index) => ({
+              id: `thread-${index + 1}`,
+            })),
+          }),
         );
       }
       const id = url.pathname.split("/").at(-1);
       if (id === undefined) throw new Error("expected thread ID");
       started.push(id);
       return new Promise((resolve) => {
-        resolveThread.set(id, () => resolve(new Response(JSON.stringify({ id, messages: [] }))));
+        resolveThread.set(id, () =>
+          resolve(new Response(JSON.stringify({ id, messages: [] }))),
+        );
       });
     });
-    const tools = createGmailTools({ capabilities: testCapabilities(fetchImpl) });
+    const tools = createGmailTools({
+      capabilities: testCapabilities(fetchImpl),
+    });
     const resultPromise = tools.run(
-      { id: "call-thread-limit", name: "gmail_search_threads", arguments: { pageSize: 11 } },
+      {
+        id: "call-thread-limit",
+        name: "gmail_search_threads",
+        arguments: { pageSize: 11 },
+      },
       new AbortController().signal,
     );
 
@@ -168,7 +189,8 @@ describe("createGmailTools", () => {
     expect(resolveThread.has("thread-11")).toBe(false);
     for (const id of [...started].reverse()) {
       const resolve = resolveThread.get(id);
-      if (resolve === undefined) throw new Error(`missing thread resolver: ${id}`);
+      if (resolve === undefined)
+        throw new Error(`missing thread resolver: ${id}`);
       resolve();
     }
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -179,7 +201,11 @@ describe("createGmailTools", () => {
 
     const result = await resultPromise;
     expect(result.content).toMatchObject({
-      data: { threads: Array.from({ length: 11 }, (_, index) => ({ id: `thread-${index + 1}` })) },
+      data: {
+        threads: Array.from({ length: 11 }, (_, index) => ({
+          id: `thread-${index + 1}`,
+        })),
+      },
     });
     await tools.dispose();
   });
@@ -191,20 +217,32 @@ describe("createGmailTools", () => {
       const url = new URL(String(input));
       if (url.pathname === "/gmail/v1/users/me/threads") {
         return new Response(
-          JSON.stringify({ threads: Array.from({ length: 11 }, (_, index) => ({ id: `thread-${index + 1}` })) }),
+          JSON.stringify({
+            threads: Array.from({ length: 11 }, (_, index) => ({
+              id: `thread-${index + 1}`,
+            })),
+          }),
         );
       }
       const id = url.pathname.split("/").at(-1);
       if (id === undefined) throw new Error("expected thread ID");
       started.push(id);
       return new Promise((resolve) => {
-        resolveThread.set(id, () => resolve(new Response(JSON.stringify({ id, messages: [] }))));
+        resolveThread.set(id, () =>
+          resolve(new Response(JSON.stringify({ id, messages: [] }))),
+        );
       });
     });
-    const tools = createGmailTools({ capabilities: testCapabilities(fetchImpl) });
+    const tools = createGmailTools({
+      capabilities: testCapabilities(fetchImpl),
+    });
     const controller = new AbortController();
     const resultPromise = tools.run(
-      { id: "call-thread-abort", name: "gmail_search_threads", arguments: { pageSize: 11 } },
+      {
+        id: "call-thread-abort",
+        name: "gmail_search_threads",
+        arguments: { pageSize: 11 },
+      },
       controller.signal,
     );
 
@@ -213,7 +251,8 @@ describe("createGmailTools", () => {
     controller.abort();
     for (const id of started) {
       const resolve = resolveThread.get(id);
-      if (resolve === undefined) throw new Error(`missing thread resolver: ${id}`);
+      if (resolve === undefined)
+        throw new Error(`missing thread resolver: ${id}`);
       resolve();
     }
 
@@ -242,8 +281,14 @@ describe("createGmailTools", () => {
               { name: "Date", value: "Tue, 19 Aug 2026 12:00:00 +0000" },
             ],
             parts: [
-              { mimeType: "text/plain", body: { data: encodeBase64Url(plaintextBody) } },
-              { mimeType: "text/html", body: { data: encodeBase64Url("<p>Hello</p>") } },
+              {
+                mimeType: "text/plain",
+                body: { data: encodeBase64Url(plaintextBody) },
+              },
+              {
+                mimeType: "text/html",
+                body: { data: encodeBase64Url("<p>Hello</p>") },
+              },
               {
                 mimeType: "application/pdf",
                 filename: "report.pdf",
@@ -263,7 +308,9 @@ describe("createGmailTools", () => {
       );
     });
 
-    const tools = createGmailTools({ capabilities: testCapabilities(fetchImpl) });
+    const tools = createGmailTools({
+      capabilities: testCapabilities(fetchImpl),
+    });
     const result = await tools.run(
       {
         id: "call-2",
@@ -303,19 +350,25 @@ describe("createGmailTools", () => {
   });
 
   test("preserves commas inside quoted recipient display names", async () => {
-    const fetchImpl = createFetchImpl(async () =>
-      new Response(
-        JSON.stringify({
-          id: "message-1",
-          payload: {
-            headers: [
-              { name: "To", value: '"Doe, John" <doe@example.com>, bob@example.com' },
-            ],
-          },
-        }),
-      ),
+    const fetchImpl = createFetchImpl(
+      async () =>
+        new Response(
+          JSON.stringify({
+            id: "message-1",
+            payload: {
+              headers: [
+                {
+                  name: "To",
+                  value: '"Doe, John" <doe@example.com>, bob@example.com',
+                },
+              ],
+            },
+          }),
+        ),
     );
-    const tools = createGmailTools({ capabilities: testCapabilities(fetchImpl) });
+    const tools = createGmailTools({
+      capabilities: testCapabilities(fetchImpl),
+    });
 
     const result = await tools.run(
       {
@@ -353,7 +406,9 @@ describe("createGmailTools", () => {
         }),
       );
     });
-    const tools = createGmailTools({ capabilities: testCapabilities(fetchImpl) });
+    const tools = createGmailTools({
+      capabilities: testCapabilities(fetchImpl),
+    });
 
     const result = await tools.run(
       {
@@ -380,7 +435,9 @@ describe("createGmailTools", () => {
     const fetchImpl = createFetchImpl(async () => {
       throw new Error("network should not run");
     });
-    const tools = createGmailTools({ capabilities: testCapabilities(fetchImpl) });
+    const tools = createGmailTools({
+      capabilities: testCapabilities(fetchImpl),
+    });
 
     const result = await tools.run(
       {
@@ -468,18 +525,26 @@ describe("createGmailTools", () => {
       const url = new URL(String(input));
       expect(url.pathname).toBe("/gmail/v1/users/me/drafts");
       expect(init?.method).toBe("POST");
-      expect(Buffer.from(draftRawFromRequest(init), "base64url").toString()).toContain(
+      expect(
+        Buffer.from(draftRawFromRequest(init), "base64url").toString(),
+      ).toContain(
         "To: ada@example.com\r\nSubject: Status\r\nMIME-Version: 1.0",
       );
       return new Response(JSON.stringify({ id: "draft-1" }));
     });
-    const tools = createGmailTools({ capabilities: testCapabilities(fetchImpl) });
+    const tools = createGmailTools({
+      capabilities: testCapabilities(fetchImpl),
+    });
 
     const result = await tools.run(
       {
         id: "call-draft",
         name: "gmail_create_draft",
-        arguments: { to: ["ada@example.com"], subject: "Status", body: "The body" },
+        arguments: {
+          to: ["ada@example.com"],
+          subject: "Status",
+          body: "The body",
+        },
       },
       new AbortController().signal,
     );
@@ -534,7 +599,9 @@ describe("createGmailTools", () => {
       if (url.pathname === "/gmail/v1/users/me/drafts") {
         if (url.searchParams.get("maxResults") === "500") {
           return new Response(
-            JSON.stringify({ drafts: [{ id: "draft-1", message: { id: "message-1" } }] }),
+            JSON.stringify({
+              drafts: [{ id: "draft-1", message: { id: "message-1" } }],
+            }),
           );
         }
         expect(url.searchParams.get("maxResults")).toBe("20");
@@ -542,7 +609,9 @@ describe("createGmailTools", () => {
       }
       if (url.pathname === "/gmail/v1/users/me/messages") {
         expect(url.searchParams.get("q")).toBe("in:drafts subject:status");
-        return new Response(JSON.stringify({ messages: [{ id: "message-1" }] }));
+        return new Response(
+          JSON.stringify({ messages: [{ id: "message-1" }] }),
+        );
       }
       return new Response(
         JSON.stringify({
@@ -551,7 +620,9 @@ describe("createGmailTools", () => {
         }),
       );
     });
-    const tools = createGmailTools({ capabilities: testCapabilities(fetchImpl) });
+    const tools = createGmailTools({
+      capabilities: testCapabilities(fetchImpl),
+    });
 
     const result = await tools.run(
       { id: "call-list-drafts", name: "gmail_list_drafts", arguments: {} },
@@ -567,7 +638,9 @@ describe("createGmailTools", () => {
       },
       new AbortController().signal,
     );
-    expect(queryResult.content).toEqual({ data: { drafts: [{ id: "draft-1" }] } });
+    expect(queryResult.content).toEqual({
+      data: { drafts: [{ id: "draft-1" }] },
+    });
     await tools.dispose();
   });
 
@@ -596,16 +669,30 @@ describe("createGmailTools", () => {
         );
       }
       const id = url.pathname.split("/").at(-1);
-      return new Response(JSON.stringify({ id: `draft-${id?.at(-1)}`, message: { id, payload: { headers: [] } } }));
+      return new Response(
+        JSON.stringify({
+          id: `draft-${id?.at(-1)}`,
+          message: { id, payload: { headers: [] } },
+        }),
+      );
     });
-    const tools = createGmailTools({ capabilities: testCapabilities(fetchImpl) });
+    const tools = createGmailTools({
+      capabilities: testCapabilities(fetchImpl),
+    });
     const result = await tools.run(
-      { id: "call-draft-page", name: "gmail_list_drafts", arguments: { query: "subject:status" } },
+      {
+        id: "call-draft-page",
+        name: "gmail_list_drafts",
+        arguments: { query: "subject:status" },
+      },
       new AbortController().signal,
     );
     expect(draftPageRequests).toBe(1);
     expect(result.content).toMatchObject({
-      data: { drafts: [{ id: "draft-2" }, { id: "draft-1" }], nextPageToken: "query-next" },
+      data: {
+        drafts: [{ id: "draft-2" }, { id: "draft-1" }],
+        nextPageToken: "query-next",
+      },
     });
     await tools.dispose();
   });
@@ -614,39 +701,64 @@ describe("createGmailTools", () => {
     const fetchImpl = createFetchImpl(async (input) => {
       const url = new URL(String(input));
       if (url.pathname === "/gmail/v1/users/me/messages") {
-        return new Response(JSON.stringify({ messages: [{ id: "message-1" }] }));
+        return new Response(
+          JSON.stringify({ messages: [{ id: "message-1" }] }),
+        );
       }
       if (url.pathname === "/gmail/v1/users/me/drafts") {
         return new Response(
           url.searchParams.get("pageToken") === null
             ? JSON.stringify({ drafts: [], nextPageToken: "page-2" })
-            : JSON.stringify({ drafts: [{ id: "draft-1", message: { id: "message-1" } }] }),
+            : JSON.stringify({
+                drafts: [{ id: "draft-1", message: { id: "message-1" } }],
+              }),
         );
       }
-      return new Response(JSON.stringify({ id: "draft-1", message: { id: "message-1", payload: { headers: [] } } }));
+      return new Response(
+        JSON.stringify({
+          id: "draft-1",
+          message: { id: "message-1", payload: { headers: [] } },
+        }),
+      );
     });
-    const tools = createGmailTools({ capabilities: testCapabilities(fetchImpl) });
+    const tools = createGmailTools({
+      capabilities: testCapabilities(fetchImpl),
+    });
     const result = await tools.run(
-      { id: "call-draft-page-2", name: "gmail_list_drafts", arguments: { query: "subject:status" } },
+      {
+        id: "call-draft-page-2",
+        name: "gmail_list_drafts",
+        arguments: { query: "subject:status" },
+      },
       new AbortController().signal,
     );
-    expect(result.content).toMatchObject({ data: { drafts: [{ id: "draft-1" }] } });
+    expect(result.content).toMatchObject({
+      data: { drafts: [{ id: "draft-1" }] },
+    });
     await tools.dispose();
   });
 
   test("uses the original sender when a reply draft omits recipients", () => {
     const raw = createRawDraft(
       { body: "Reply" },
-      { messageId: "<message-1@example.com>", subject: "Original", to: ["ada@example.com"] },
+      {
+        messageId: "<message-1@example.com>",
+        subject: "Original",
+        to: ["ada@example.com"],
+      },
     );
-    expect(Buffer.from(raw, "base64url").toString()).toContain("To: ada@example.com");
+    expect(Buffer.from(raw, "base64url").toString()).toContain(
+      "To: ada@example.com",
+    );
   });
 
   test("applies and removes labels on messages and threads", async () => {
     const fetchImpl = createFetchImpl(async (input, init) => {
       const url = new URL(String(input));
       const request = jsonRequestBody(init);
-      expect(url.pathname).toMatch(/\/(messages|threads)\/(message-1|thread-1)\/modify$/);
+      expect(url.pathname).toMatch(
+        /\/(messages|threads)\/(message-1|thread-1)\/modify$/,
+      );
       if (url.pathname.includes("threads")) {
         return new Response(JSON.stringify({ id: "thread-1", messages: [] }));
       }
@@ -657,7 +769,9 @@ describe("createGmailTools", () => {
         }),
       );
     });
-    const tools = createGmailTools({ capabilities: testCapabilities(fetchImpl) });
+    const tools = createGmailTools({
+      capabilities: testCapabilities(fetchImpl),
+    });
     const signal = new AbortController().signal;
 
     for (const name of [
@@ -671,7 +785,12 @@ describe("createGmailTools", () => {
         {
           id: name,
           name,
-          arguments: { [isThread ? "threadId" : "messageId"]: isThread ? "thread-1" : "message-1", labelIds: ["STARRED"] },
+          arguments: {
+            [isThread ? "threadId" : "messageId"]: isThread
+              ? "thread-1"
+              : "message-1",
+            labelIds: ["STARRED"],
+          },
         },
         signal,
       );

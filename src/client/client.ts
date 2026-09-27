@@ -9,13 +9,11 @@ import {
   GmailThreadSchema,
   parseGmailResponse,
   type GmailDraft,
-  type GmailHeader,
   type GmailListDraftsResponse,
   type GmailListLabelsResponse,
   type GmailListMessagesResponse,
   type GmailListThreadsResponse,
   type GmailMessage,
-  type GmailMessagePart,
   type GmailResponseSchema,
   type GmailThread,
 } from "./schemas.js";
@@ -167,7 +165,9 @@ function responseBodyError(
   );
 }
 
-export function createGmailClient({ fetchImpl }: CreateGmailClientOptions): GmailClient {
+export function createGmailClient({
+  fetchImpl,
+}: CreateGmailClientOptions): GmailClient {
   if (typeof fetchImpl !== "function") {
     throw new Error("createGmailClient: provide fetchImpl");
   }
@@ -208,7 +208,11 @@ export function createGmailClient({ fetchImpl }: CreateGmailClientOptions): Gmai
     try {
       raw = await response.text();
     } catch (cause) {
-      throw responseBodyError(response.status, "could not read response body", cause);
+      throw responseBodyError(
+        response.status,
+        "could not read response body",
+        cause,
+      );
     }
 
     if (!response.ok) {
@@ -216,7 +220,11 @@ export function createGmailClient({ fetchImpl }: CreateGmailClientOptions): Gmai
     }
 
     if (raw.length === 0) {
-      throw responseBodyError(response.status, "response body was empty", undefined);
+      throw responseBodyError(
+        response.status,
+        "response body was empty",
+        undefined,
+      );
     }
 
     let parsed: unknown;
@@ -324,7 +332,9 @@ export function createGmailClient({ fetchImpl }: CreateGmailClientOptions): Gmai
           body: {
             message: {
               raw: options.raw,
-              ...(options.threadId === undefined ? {} : { threadId: options.threadId }),
+              ...(options.threadId === undefined
+                ? {}
+                : { threadId: options.threadId }),
             },
           },
           signal: options.signal,

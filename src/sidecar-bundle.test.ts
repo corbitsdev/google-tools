@@ -47,8 +47,12 @@ afterAll(async () => {
 describe("gmail sidecar-bundle static declaration", () => {
   test("declared definition names match the instantiated bundle's names", async () => {
     const bundle = gmail(env);
-    const declared = new Set(gmail.definitions.map((definition) => definition.name));
-    const emitted = new Set(bundle.definitions.map((definition) => definition.name));
+    const declared = new Set(
+      gmail.definitions.map((definition) => definition.name),
+    );
+    const emitted = new Set(
+      bundle.definitions.map((definition) => definition.name),
+    );
     expect(emitted).toEqual(declared);
     await bundle.dispose?.();
   });
