@@ -70,12 +70,27 @@ function headersByName(
   return result;
 }
 
-function decodeBase64Url(value: string): string {
+function decodeBase64Url(value: string): Uint8Array | undefined {
   const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
   const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
-  return new TextDecoder().decode(
-    Uint8Array.from(atob(padded), (character) => character.charCodeAt(0)),
-  );
+  try {
+    return Uint8Array.from(atob(padded), (character) =>
+      character.charCodeAt(0),
+    );
+  } catch {
+    return undefined;
+  }
+}
+
+function textDecoder(part: GmailMessagePart): TextDecoder {
+  const contentType = headersByName(part.headers).get("content-type") ?? "";
+  const charset = /charset\s*=\s*"?([^";\s]+)/i.exec(contentType)?.[1];
+  try {
+    // bun-types narrows the label to three encodings; runtimes accept any WHATWG label.
+    return new TextDecoder(charset as Bun.Encoding | undefined);
+  } catch {
+    return new TextDecoder();
+  }
 }
 
 function collectParts(part: GmailMessagePart | undefined): GmailMessagePart[] {
@@ -96,7 +111,8 @@ function bodyForMimeType(
     ) {
       return [];
     }
-    return [decodeBase64Url(part.body.data)];
+    const bytes = decodeBase64Url(part.body.data);
+    return bytes === undefined ? [] : [textDecoder(part).decode(bytes)];
   });
   return values.length === 0 ? undefined : values.join("\n\n");
 }

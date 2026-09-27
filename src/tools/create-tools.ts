@@ -10,6 +10,7 @@ import type { RuntimeCapabilities } from "@intx/types/runtime-capabilities";
 
 import {
   createGmailClient,
+  GmailApiError,
   type GmailClient,
   type GmailDraft,
   type GmailFetch,
@@ -223,10 +224,13 @@ async function lookupThreads(
   view: GmailThreadView,
   signal: AbortSignal,
 ) {
-  const threads = Array.from<{
-    id: string;
-    messages: ReturnType<typeof toThreadListMessage>[];
-  }>({
+  const threads = Array.from<
+    | {
+        id: string;
+        messages: ReturnType<typeof toThreadListMessage>[];
+      }
+    | undefined
+  >({
     length: threadIds.length,
   });
   let nextIndex = 0;
@@ -252,6 +256,8 @@ async function lookupThreads(
           ),
         };
       } catch (error) {
+        // A thread deleted between list and lookup drops out of the page.
+        if (error instanceof GmailApiError && error.status === 404) continue;
         failed = true;
         throw error;
       }
@@ -263,7 +269,7 @@ async function lookupThreads(
       worker,
     ),
   );
-  return threads;
+  return threads.filter((thread) => thread !== undefined);
 }
 
 const HANDLERS = new Map<string, GmailToolHandler>([

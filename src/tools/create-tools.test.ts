@@ -262,6 +262,75 @@ describe("createGmailTools", () => {
     await tools.dispose();
   });
 
+  test("skips a thread that 404s instead of failing the page", async () => {
+    const tools = createGmailTools({
+      capabilities: testCapabilities(async (input) => {
+        const url = new URL(String(input));
+        if (url.pathname === "/gmail/v1/users/me/threads") {
+          return new Response(
+            JSON.stringify({ threads: [{ id: "thread-1" }, { id: "gone" }] }),
+          );
+        }
+        if (url.pathname.endsWith("/gone")) {
+          return new Response("{}", { status: 404, statusText: "Not Found" });
+        }
+        return new Response(JSON.stringify({ id: "thread-1", messages: [] }));
+      }),
+    });
+    const result = await tools.run(
+      { id: "call-gone", name: "gmail_search_threads", arguments: {} },
+      new AbortController().signal,
+    );
+    expect(result.isError).toBeUndefined();
+    expect(result.content).toEqual({
+      data: { threads: [{ id: "thread-1", messages: [] }] },
+    });
+    await tools.dispose();
+  });
+
+  test("skips malformed base64 parts and decodes the declared charset", async () => {
+    const tools = createGmailTools({
+      capabilities: testCapabilities(
+        async () =>
+          new Response(
+            JSON.stringify({
+              id: "message-1",
+              payload: {
+                mimeType: "multipart/alternative",
+                parts: [
+                  {
+                    mimeType: "text/plain",
+                    headers: [
+                      {
+                        name: "Content-Type",
+                        value: 'text/plain; charset="ISO-8859-1"',
+                      },
+                    ],
+                    body: {
+                      data: Buffer.from("café", "latin1").toString("base64url"),
+                    },
+                  },
+                  { mimeType: "text/html", body: { data: "!!!not-base64!!!" } },
+                ],
+              },
+            }),
+          ),
+      ),
+    });
+    const result = await tools.run(
+      {
+        id: "call-charset",
+        name: "gmail_get_message",
+        arguments: { messageId: "message-1" },
+      },
+      new AbortController().signal,
+    );
+    expect(result.content).toEqual({
+      data: { id: "message-1", labelIds: [], plaintextBody: "café" },
+    });
+    await tools.dispose();
+  });
+
   test("returns complete decoded text, HTML, and attachment metadata", async () => {
     const plaintextBody = "a".repeat(70_000);
     const fetchImpl = createFetchImpl(async (input) => {
