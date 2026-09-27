@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 
-import { createLiveHarness, toolData, toolId } from "./live-harness.js";
+import { createLiveHarness, toolData, toolId } from "./helpers.js";
 
 const LIVE_TEST_TIMEOUT_MS = 60_000;
 

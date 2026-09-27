@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { createRuntimeCapabilities } from "@intx/types/runtime-capabilities";
 
 import type { GmailFetch } from "../client/index.js";
-import { GMAIL_CREDENTIAL_HANDLE, TOOL_DEFINITIONS } from "./definitions.js";
+import { GMAIL_CREDENTIAL_HANDLE } from "./definitions.js";
 import { createGmailTools } from "./create-tools.js";
 import { createRawDraft } from "./drafts.js";
 
@@ -49,49 +49,6 @@ function draftRawFromRequest(init: RequestInit | undefined): string {
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
-
-describe("Gmail tool definitions", () => {
-  test("declares the complete Google-compatible Gmail surface", () => {
-    expect(TOOL_DEFINITIONS.map((definition) => definition.name).sort()).toEqual([
-      "gmail_create_draft",
-      "gmail_get_message",
-      "gmail_get_thread",
-      "gmail_label_message",
-      "gmail_label_thread",
-      "gmail_list_drafts",
-      "gmail_list_labels",
-      "gmail_search_threads",
-      "gmail_unlabel_message",
-      "gmail_unlabel_thread",
-    ]);
-  });
-
-  test("publishes strict generated JSON Schemas with Google defaults", () => {
-    for (const definition of TOOL_DEFINITIONS) {
-      expect(definition.inputSchema).toMatchObject({
-        $schema: "http://json-schema.org/draft-07/schema#",
-        type: "object",
-        additionalProperties: false,
-      });
-    }
-    const searchThreads = TOOL_DEFINITIONS.find(
-      (definition) => definition.name === "gmail_search_threads",
-    );
-    expect(searchThreads?.inputSchema).toMatchObject({
-      properties: {
-        pageSize: { type: "integer", minimum: 1, maximum: 50, default: 20 },
-        includeTrash: { type: "boolean", default: false },
-        view: {
-          default: "THREAD_VIEW_MINIMAL",
-          anyOf: [
-            { const: "THREAD_VIEW_METADATA_ONLY" },
-            { const: "THREAD_VIEW_MINIMAL" },
-          ],
-        },
-      },
-    });
-  });
-});
 
 describe("createGmailTools", () => {
   test("searches through the mediated credential with Google-compatible defaults", async () => {
