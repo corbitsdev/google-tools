@@ -51,7 +51,7 @@ granted it and passes it to the tools. The token stays out of the agent.
   [`@corbits/oauth-core`](https://github.com/corbitsdev/corbits-oauth-core),
   which obtains the Google credential the hub stores.
 
-## Tools
+## Reference
 
 | Tool                    | Purpose                                             |
 | ----------------------- | --------------------------------------------------- |

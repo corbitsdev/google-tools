@@ -170,17 +170,15 @@ function messageMetadata(
   const toRecipients = recipients(headers.get("to"));
   const ccRecipients = recipients(headers.get("cc"));
   const bccRecipients = recipients(headers.get("bcc"));
+  const subject = headers.get("subject");
+  const sender = headers.get("from");
   return {
     ...baseMessage(message),
     ...(includeSubject && message.snippet !== undefined
       ? { snippet: message.snippet }
       : {}),
-    ...(includeSubject && headers.get("subject") !== undefined
-      ? { subject: headers.get("subject") }
-      : {}),
-    ...(headers.get("from") === undefined
-      ? {}
-      : { sender: headers.get("from") }),
+    ...(includeSubject && subject !== undefined ? { subject } : {}),
+    ...(sender === undefined ? {} : { sender }),
     ...(toRecipients === undefined ? {} : { toRecipients }),
     ...(ccRecipients === undefined ? {} : { ccRecipients }),
     ...(bccRecipients === undefined ? {} : { bccRecipients }),

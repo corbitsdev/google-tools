@@ -45,16 +45,16 @@ export type GmailQueryValue =
 export type GmailRequest = {
   method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   path: string;
-  query?: Record<string, GmailQueryValue>;
+  query?: Record<string, GmailQueryValue> | undefined;
   body?: unknown;
-  signal?: AbortSignal;
+  signal?: AbortSignal | undefined;
 };
 
 export type GmailFormat = "full" | "metadata" | "minimal";
 
 export type GmailModifyLabels = {
-  addLabelIds?: readonly string[];
-  removeLabelIds?: readonly string[];
+  addLabelIds?: readonly string[] | undefined;
+  removeLabelIds?: readonly string[] | undefined;
 };
 
 export type GmailFetch = (
@@ -64,51 +64,51 @@ export type GmailFetch = (
 
 export type GmailClient = {
   listThreads(options: {
-    query?: string;
+    query?: string | undefined;
     pageSize: number;
-    pageToken?: string;
+    pageToken?: string | undefined;
     includeTrash: boolean;
-    signal?: AbortSignal;
+    signal?: AbortSignal | undefined;
   }): Promise<GmailListThreadsResponse>;
   getThread(
     id: string,
     options: {
       format: GmailFormat;
-      metadataHeaders?: readonly string[];
-      signal?: AbortSignal;
+      metadataHeaders?: readonly string[] | undefined;
+      signal?: AbortSignal | undefined;
     },
   ): Promise<GmailThread>;
   getMessage(
     id: string,
     options: {
       format: GmailFormat;
-      metadataHeaders?: readonly string[];
-      signal?: AbortSignal;
+      metadataHeaders?: readonly string[] | undefined;
+      signal?: AbortSignal | undefined;
     },
   ): Promise<GmailMessage>;
   listDrafts(options: {
     pageSize: number;
-    pageToken?: string;
-    signal?: AbortSignal;
+    pageToken?: string | undefined;
+    signal?: AbortSignal | undefined;
   }): Promise<GmailListDraftsResponse>;
   listMessages(options: {
     query: string;
     pageSize: number;
-    pageToken?: string;
-    signal?: AbortSignal;
+    pageToken?: string | undefined;
+    signal?: AbortSignal | undefined;
   }): Promise<GmailListMessagesResponse>;
   getDraft(
     id: string,
     options: {
       format: GmailFormat;
-      metadataHeaders?: readonly string[];
-      signal?: AbortSignal;
+      metadataHeaders?: readonly string[] | undefined;
+      signal?: AbortSignal | undefined;
     },
   ): Promise<GmailDraft>;
   createDraft(options: {
     raw: string;
-    threadId?: string;
-    signal?: AbortSignal;
+    threadId?: string | undefined;
+    signal?: AbortSignal | undefined;
   }): Promise<GmailDraft>;
   modifyMessage(
     id: string,

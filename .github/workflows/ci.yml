@@ -1,40 +1,27 @@
-name: CI
+name: ci
 
 on:
-  push:
-    branches: ["**"]
   pull_request:
+  push:
+    branches: [main]
 
 jobs:
-  verify:
+  check:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [24]
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: 24
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
-      - run: bun run lint
-      - run: bun run format:check
-      - run: bun run typecheck
-      - run: bun run typecheck:e2e
-      - run: bun run test
-      - run: bun run build
-      - name: node smoke
+      - run: bun run check
+      - name: node consumer smoke
         run: |
-          node -e '
-            const major = Number(process.versions.node.split(".")[0]);
-            if (major < 24) {
-              throw new Error("need Node 24+, got " + process.version);
-            }
-            import("./dist/index.js").then((m) => {
-              if (typeof m.createGmailTools !== "function") {
-                throw new Error("missing export: createGmailTools");
-              }
-              console.log("node smoke ok", process.version);
-            });
-          '
+          set -euo pipefail
+          TARBALL="$PWD/$(npm pack --silent)"
+          mkdir -p "$RUNNER_TEMP/c" && cd "$RUNNER_TEMP/c"
+          npm init -y >/dev/null && npm pkg set type=module >/dev/null
+          npm install "$TARBALL"
+          node -e 'import("@corbits/google-tools").then((m) => { for (const n of ["createGmailTools", "createGmailClient", "GmailApiError"]) if (typeof m[n] !== "function") throw new Error("missing export: " + n); })'
